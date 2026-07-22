@@ -218,17 +218,8 @@ const Dashboard = () => {
                 />
               </Tooltip>
             </Box>
-          ) : (
-            <Tooltip label="CodeSync is ready">
-              <Image
-                src="logo-xiaohei-transparent.png"
-                alt="CodeSync mascot"
-                boxSize="64px"
-                filter="drop-shadow(0 0 2px rgba(186, 187, 241, 0.7))"
-              />
-            </Tooltip>
-          )}
-          <Box textAlign="left">
+          ) : null}
+          <Box textAlign="left" flex="1" minW={0}>
             <HStack spacing={0} align="center">
               <Heading size="lg" fontWeight={'black'}>
                 {streak > 0 ? `${streak} day streak!` : 'Start your streak!'}
