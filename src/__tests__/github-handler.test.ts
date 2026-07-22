@@ -90,12 +90,34 @@ describe('GithubHandler', () => {
     expect(stored.github_repo_visibility).toBe('public');
   });
 
+  it('records Codeforces repository visibility separately', async () => {
+    stored.github_leetsync_token = 'token';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ private: false, permissions: { push: true } }),
+      }),
+    );
+
+    expect(
+      await new GithubHandler().checkIfRepoExists(
+        'owner/codeforces-solutions',
+        'github_codeforces_repo_visibility',
+      ),
+    ).toBe(true);
+    expect(stored.github_codeforces_repo_visibility).toBe('public');
+    expect(stored.github_repo_visibility).toBeUndefined();
+  });
+
   it('uploads the README, notes, and solution through the trusted worker configuration', async () => {
     Object.assign(stored, {
       github_leetsync_token: 'token',
       github_username: 'user',
       github_repo_owner: 'owner',
       github_leetsync_repo: 'solutions',
+      github_codeforces_repo_owner: 'other-owner',
+      github_codeforces_repo: 'codeforces-solutions',
       github_leetsync_subdirectory: 'leetcode/easy',
     });
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
@@ -213,5 +235,43 @@ describe('GithubHandler', () => {
     expect(stored.codeforces_synced_submissions).toHaveProperty('99');
     expect(await handler.submitCodeforces(submission)).toBe(false);
     expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(2);
+  });
+
+  it('routes Codeforces to a separate repository without a redundant platform folder', async () => {
+    Object.assign(stored, {
+      github_leetsync_token: 'token',
+      github_username: 'user',
+      github_repo_owner: 'owner',
+      github_leetsync_repo: 'leetcode-solutions',
+      github_codeforces_repo_owner: 'owner',
+      github_codeforces_repo: 'codeforces-solutions',
+      github_leetsync_subdirectory: 'accepted',
+    });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === 'PUT'
+        ? { ok: true, status: 201, json: async () => ({}) }
+        : { ok: false, status: 404, json: async () => ({}) },
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const submission: CodeforcesSubmission = {
+      id: 100,
+      contestId: 123,
+      creationTimeSeconds: 1,
+      verdict: 'OK',
+      programmingLanguage: 'GNU C++17',
+      code: 'int main() { return 0; }',
+      statement: '<div>Find the answer.</div>',
+      problemUrl: 'https://codeforces.com/contest/123/problem/A',
+      submissionUrl: 'https://codeforces.com/contest/123/submission/100',
+      problem: { index: 'A', name: 'Test Problem', rating: 800, tags: ['math'] },
+    };
+
+    expect(await new GithubHandler().submitCodeforces(submission)).toBe(true);
+    const putCalls = fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT');
+    expect(putCalls).toHaveLength(2);
+    expect(putCalls[0][0]).toContain(
+      '/repos/owner/codeforces-solutions/contents/accepted/123A-test-problem/',
+    );
+    expect(putCalls[0][0]).not.toContain('/Codeforces/');
   });
 });

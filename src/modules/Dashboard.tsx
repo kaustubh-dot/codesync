@@ -78,9 +78,12 @@ const Dashboard = () => {
   const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
   const [repoVisibility, setRepoVisibility] = React.useState('private');
+  const [codeforcesRepoVisibility, setCodeforcesRepoVisibility] = React.useState('');
   const [uploadError, setUploadError] = React.useState('');
   const [codeforcesHandle, setCodeforcesHandle] = React.useState('');
   const [codeforcesSolved, setCodeforcesSolved] = React.useState(0);
+  const [codeforcesRepoOwner, setCodeforcesRepoOwner] = React.useState('');
+  const [codeforcesRepo, setCodeforcesRepo] = React.useState('');
 
   const solvedProblemsToday = problemsPerDay?.[new Date().toLocaleDateString()] || 0;
 
@@ -94,6 +97,9 @@ const Dashboard = () => {
         'lastUploadError',
         'codeforces_handle',
         'codeforces_synced_submissions',
+        'github_codeforces_repo_owner',
+        'github_codeforces_repo',
+        'github_codeforces_repo_visibility',
       ],
       (result) => {
         const {
@@ -104,12 +110,24 @@ const Dashboard = () => {
           lastUploadError,
           codeforces_handle,
           codeforces_synced_submissions,
+          github_codeforces_repo_owner,
+          github_codeforces_repo,
+          github_codeforces_repo_visibility,
         } = result;
         setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
         setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
         setRepoVisibility(github_repo_visibility === 'public' ? 'public' : 'private');
         setUploadError(typeof lastUploadError === 'string' ? lastUploadError : '');
         setCodeforcesHandle(typeof codeforces_handle === 'string' ? codeforces_handle : '');
+        setCodeforcesRepoOwner(
+          typeof github_codeforces_repo_owner === 'string' ? github_codeforces_repo_owner : '',
+        );
+        setCodeforcesRepo(
+          typeof github_codeforces_repo === 'string' ? github_codeforces_repo : '',
+        );
+        setCodeforcesRepoVisibility(
+          github_codeforces_repo_visibility === 'public' ? 'public' : '',
+        );
         setCodeforcesSolved(
           codeforces_synced_submissions && typeof codeforces_synced_submissions === 'object'
             ? Object.keys(codeforces_synced_submissions).length
@@ -155,17 +173,34 @@ const Dashboard = () => {
         <SettingsMenu />
       </Box>
       <VStack w="100%" h="100%" align="flex-start" justify={'flex-start'} spacing={8}>
-        {(uploadError || repoVisibility === 'public') && (
+        {(uploadError || repoVisibility === 'public' || codeforcesRepoVisibility === 'public') && (
           <Alert status={uploadError ? 'error' : 'info'} fontSize="sm" borderRadius="md">
             <AlertIcon />
-            {uploadError || 'Public repository linked. Credential checks are enabled.'}
+            {uploadError || 'A destination repository is public. Credential checks are enabled.'}
           </Alert>
         )}
-        <Alert status={codeforcesHandle ? 'success' : 'info'} fontSize="sm" borderRadius="md">
-          <AlertIcon />
-          {codeforcesHandle
-            ? `Codeforces @${codeforcesHandle} enabled · ${codeforcesSolved} synced`
-            : 'Connect your Codeforces handle from Settings to enable Codeforces syncing.'}
+        <Alert
+          status={codeforcesHandle ? 'success' : 'info'}
+          fontSize="sm"
+          borderRadius="md"
+          alignItems="flex-start"
+        >
+          <AlertIcon mt="2px" />
+          <Box minW={0}>
+            <Text>
+              {codeforcesHandle
+                ? `Codeforces @${codeforcesHandle} enabled · ${codeforcesSolved} synced`
+                : 'Connect your Codeforces handle from Settings to enable Codeforces syncing.'}
+            </Text>
+            {codeforcesHandle && (
+              <Text fontSize="xs" color="gray.600" wordBreak="break-all">
+                Destination:{' '}
+                {codeforcesRepoOwner && codeforcesRepo
+                  ? `${codeforcesRepoOwner}/${codeforcesRepo}`
+                  : `${githubOwner}/${githubRepo}/Codeforces`}
+              </Text>
+            )}
+          </Box>
         </Alert>
         <HStack w="100%" align={'center'}>
           {solvedProblemsToday ? (

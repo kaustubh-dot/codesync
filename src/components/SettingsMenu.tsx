@@ -24,32 +24,59 @@ import {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  Radio,
+  RadioGroup,
   Text,
   Tooltip,
   VStack,
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { BiTrashAlt, BiUnlink } from 'react-icons/bi';
+import { BiGitRepoForked, BiTrashAlt, BiUnlink } from 'react-icons/bi';
 import { CiSettings } from 'react-icons/ci';
 import { SiCodeforces } from 'react-icons/si';
 import { TbSlashes } from 'react-icons/tb';
 import { CodeforcesHandler, GithubHandler } from '../handlers';
 import { CustomEditableComponent } from './Editable';
 
+type CodeforcesRepositoryMode = 'shared' | 'separate';
+
+const parseRepositoryUrl = (value: string) => {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  const [owner, rawRepo, ...extra] = url.pathname.split('/').filter(Boolean);
+  const repo = rawRepo?.replace(/\.git$/i, '');
+  return url.hostname === 'github.com' && owner && repo && !extra.length ? { owner, repo } : null;
+};
+
 const SettingsMenu = () => {
   const [subdirectory, setSubdirectoryValue] = useState<string | null>(null);
 
   const [isOpen, setOpen] = useState<
-    'unlink' | 'clear' | 'subdirectory' | 'codeforces' | null
+    'unlink' | 'clear' | 'subdirectory' | 'codeforces' | 'codeforces-repo' | null
   >(null);
   const [githubUsername, setGithubUsername] = React.useState('');
   const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
   const [newRepoURL, setNewRepoURL] = useState('');
   const [codeforcesHandle, setCodeforcesHandle] = useState('');
+  const [codeforcesRepoMode, setCodeforcesRepoMode] =
+    useState<CodeforcesRepositoryMode>('shared');
+  const [codeforcesRepoOwner, setCodeforcesRepoOwner] = useState('');
+  const [codeforcesRepo, setCodeforcesRepo] = useState('');
+  const [codeforcesRepoURL, setCodeforcesRepoURL] = useState('');
   const [isConfigured, setIsConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const closeCodeforcesRepository = () => {
+    setCodeforcesRepoMode(codeforcesRepoOwner && codeforcesRepo ? 'separate' : 'shared');
+    setError('');
+    setOpen(null);
+  };
 
   const unlinkRepo = async () => {
     await chrome.storage.local.remove(['github_repo_owner', 'github_leetsync_repo']);
@@ -59,17 +86,9 @@ const SettingsMenu = () => {
   };
   const handleLinkRepo = async () => {
     if (!newRepoURL) return setError('Repository URL is required');
-    let url: URL;
-    try {
-      url = new URL(newRepoURL);
-    } catch {
-      return setError('Invalid repository URL');
-    }
-    const [owner, rawRepo, ...extra] = url.pathname.split('/').filter(Boolean);
-    const repoName = rawRepo?.replace(/\.git$/i, '');
-    if (url.hostname !== 'github.com' || !owner || !repoName || extra.length) {
-      return setError('Invalid repository URL');
-    }
+    const repository = parseRepositoryUrl(newRepoURL);
+    if (!repository) return setError('Invalid repository URL');
+    const { owner, repo: repoName } = repository;
 
     setError('');
     setLoading(true);
@@ -119,6 +138,53 @@ const SettingsMenu = () => {
     setOpen(null);
   };
 
+  const saveCodeforcesRepository = async () => {
+    setError('');
+    if (codeforcesRepoMode === 'shared') {
+      await chrome.storage.local.remove([
+        'github_codeforces_repo_owner',
+        'github_codeforces_repo',
+        'github_codeforces_repo_visibility',
+      ]);
+      setCodeforcesRepoOwner('');
+      setCodeforcesRepo('');
+      setCodeforcesRepoURL('');
+      setOpen(null);
+      window.location.reload();
+      return;
+    }
+
+    const repository = parseRepositoryUrl(codeforcesRepoURL);
+    if (!repository) return setError('Enter a complete GitHub repository URL.');
+    const { owner, repo } = repository;
+    if (owner === githubOwner && repo === githubRepo) {
+      return setError('Choose Linked repository when both platforms use the same repository.');
+    }
+
+    setLoading(true);
+    try {
+      const writable = await new GithubHandler().checkIfRepoExists(
+        `${owner}/${repo}`,
+        'github_codeforces_repo_visibility',
+      );
+      if (!writable) {
+        return setError('Repository not found or token lacks write access.');
+      }
+      await chrome.storage.local.set({
+        github_codeforces_repo_owner: owner,
+        github_codeforces_repo: repo,
+      });
+      setCodeforcesRepoOwner(owner);
+      setCodeforcesRepo(repo);
+      setOpen(null);
+      window.location.reload();
+    } catch {
+      setError('Could not verify the repository. Check your connection and token permissions.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const trimSubdirectory = (text: string) => {
     return text.replace(/^\/+|\/+$/g, '');
   };
@@ -154,6 +220,8 @@ const SettingsMenu = () => {
         'github_leetsync_token',
         'github_leetsync_subdirectory',
         'codeforces_handle',
+        'github_codeforces_repo_owner',
+        'github_codeforces_repo',
       ],
       (result) => {
         const {
@@ -163,12 +231,24 @@ const SettingsMenu = () => {
           github_leetsync_token,
           github_leetsync_subdirectory,
           codeforces_handle,
+          github_codeforces_repo_owner,
+          github_codeforces_repo,
         } = result;
         setGithubUsername(typeof github_username === 'string' ? github_username : '');
         setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
         setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
         setIsConfigured(!!github_leetsync_token);
         setCodeforcesHandle(typeof codeforces_handle === 'string' ? codeforces_handle : '');
+        const separateOwner =
+          typeof github_codeforces_repo_owner === 'string' ? github_codeforces_repo_owner : '';
+        const separateRepo =
+          typeof github_codeforces_repo === 'string' ? github_codeforces_repo : '';
+        setCodeforcesRepoOwner(separateOwner);
+        setCodeforcesRepo(separateRepo);
+        setCodeforcesRepoMode(separateOwner && separateRepo ? 'separate' : 'shared');
+        setCodeforcesRepoURL(
+          separateOwner && separateRepo ? `https://github.com/${separateOwner}/${separateRepo}` : '',
+        );
         setSubdirectoryValue(
           typeof github_leetsync_subdirectory === 'string' ? github_leetsync_subdirectory : null,
         );
@@ -252,6 +332,98 @@ const SettingsMenu = () => {
                 >
                   Save
                 </Button>
+              </PopoverFooter>
+            </PopoverContent>
+          </Popover>
+          <Popover
+            isOpen={isOpen === 'codeforces-repo'}
+            onClose={closeCodeforcesRepository}
+            placement="bottom-start"
+            closeOnBlur={false}
+          >
+            <PopoverTrigger>
+              <MenuItem
+                icon={<BiGitRepoForked fontSize={'1.2rem'} />}
+                minH="40px"
+                onClick={() => {
+                  setError('');
+                  setCodeforcesRepoMode(
+                    codeforcesRepoOwner && codeforcesRepo ? 'separate' : 'shared',
+                  );
+                  setCodeforcesRepoURL(
+                    codeforcesRepoOwner && codeforcesRepo
+                      ? `https://github.com/${codeforcesRepoOwner}/${codeforcesRepo}`
+                      : '',
+                  );
+                  setOpen('codeforces-repo');
+                }}
+                closeOnSelect={false}
+              >
+                Codeforces repo: {codeforcesRepoMode === 'shared' ? 'Linked' : 'Separate'}
+              </MenuItem>
+            </PopoverTrigger>
+            <PopoverContent zIndex={1000000} w="420px">
+              <PopoverHeader fontWeight="semibold">Codeforces repository</PopoverHeader>
+              <PopoverArrow />
+              <PopoverCloseButton />
+              <PopoverBody>
+                <RadioGroup
+                  value={codeforcesRepoMode}
+                  onChange={(value) => {
+                    setError('');
+                    setCodeforcesRepoMode(value as CodeforcesRepositoryMode);
+                  }}
+                >
+                  <VStack align="stretch" spacing={1}>
+                    <Radio value="shared">Use linked repository</Radio>
+                    <Text fontSize="xs" color="gray.500" pl={6} pb={2}>
+                      Upload to {githubOwner}/{githubRepo}/Codeforces.
+                    </Text>
+                    <Radio value="separate">Use separate repository</Radio>
+                    <Text fontSize="xs" color="gray.500" pl={6}>
+                      Upload Codeforces problem folders directly to another repository.
+                    </Text>
+                  </VStack>
+                </RadioGroup>
+                {codeforcesRepoMode === 'separate' && (
+                  <FormControl isInvalid={!!error} mt={4}>
+                    <Input
+                      placeholder="https://github.com/owner/codeforces-solutions"
+                      value={codeforcesRepoURL}
+                      onChange={(event) => setCodeforcesRepoURL(event.target.value)}
+                      size="sm"
+                    />
+                    {error ? (
+                      <FormErrorMessage fontSize="xs">{error}</FormErrorMessage>
+                    ) : (
+                      <FormHelperText fontSize="xs">
+                        The current fine-grained token must have Contents read/write access.
+                      </FormHelperText>
+                    )}
+                  </FormControl>
+                )}
+              </PopoverBody>
+              <PopoverFooter display="flex" justifyContent="flex-end">
+                <ButtonGroup size="sm">
+                  <Button
+                    variant="outline"
+                    onClick={closeCodeforcesRepository}
+                    isDisabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="green"
+                    onClick={saveCodeforcesRepository}
+                    isLoading={loading}
+                    isDisabled={
+                      loading ||
+                      (codeforcesRepoMode === 'separate' && !codeforcesRepoURL.trim())
+                    }
+                  >
+                    Save
+                  </Button>
+                </ButtonGroup>
               </PopoverFooter>
             </PopoverContent>
           </Popover>

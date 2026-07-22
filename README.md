@@ -5,14 +5,14 @@
 <h1 align="center">CodeSync</h1>
 
 <p align="center">
-  A personal Chrome extension that sends accepted LeetCode and Codeforces submissions to one GitHub repository.
+  A personal Chrome extension that sends accepted LeetCode and Codeforces submissions to one or two GitHub repositories.
 </p>
 
 CodeSync is a private, self-built extension. It is not published in the Chrome Web Store and it does
 not use a hosted backend. You build it from this repository, load the resulting `build` directory in
-Chrome, and connect it to a GitHub repository with a narrowly scoped fine-grained token.
+Chrome, and connect it to GitHub repositories with a narrowly scoped fine-grained token.
 
-The destination repository may be public or private. A public repository exposes your solutions,
+Each destination repository may be public or private. A public repository exposes your solutions,
 notes, commit history, and problem-solving activity. It does not expose the GitHub token unless you
 put that token inside a solution or note. CodeSync checks uploads for common credential formats, but
 that check is a safety net rather than a substitute for reviewing public content.
@@ -50,6 +50,7 @@ giving coding-platform pages access to the GitHub token.
 | Upload personal notes | Yes, when notes exist | No |
 | Avoid duplicate uploads | Existing file update | Accepted submission ID tracking |
 | Show local solved statistics | Yes | Separate synced count |
+| Choose a separate repository | Primary repository | Optional |
 | Historical backfill | No | No |
 
 After a successful upload, the toolbar icon changes to a flame for five seconds. The extension then
@@ -58,10 +59,11 @@ restores the CodeSync logo.
 ## How it works
 
 ```text
-LeetCode problem tab ─┐
-                     ├─> trusted background worker ─> GitHub Contents API ─> selected repository
-Codeforces tab ──────┘              │
-                                    └─ fine-grained token in local extension storage
+LeetCode problem tab ─> trusted background worker ─> GitHub Contents API ─> primary repository
+                               │
+Codeforces tab ─────────────────┘──────────────────────────────────────────> primary or separate repository
+                               │
+                               └─ fine-grained token in local extension storage
 ```
 
 The content scripts read submission data from the signed-in LeetCode or Codeforces page. They send
@@ -81,7 +83,7 @@ You need:
 - Node.js 20 or newer. GitHub Actions currently verifies the project with Node.js 24.
 - npm, which is included with Node.js.
 - Access to the private `kaustubh-dot/codesync` repository.
-- A separate GitHub repository that will hold your solutions.
+- One GitHub repository for all solutions, or separate LeetCode and Codeforces repositories.
 
 Check the local tools before continuing:
 
@@ -176,8 +178,10 @@ extension. Confirm that the extension path still points to this repository's `bu
 
 ## GitHub setup
 
-CodeSync needs one destination repository and one fine-grained personal access token. Create the
-repository first because GitHub asks you to select it while creating the token.
+CodeSync needs a primary destination repository and one fine-grained personal access token. The
+primary repository stores LeetCode submissions and, by default, a `Codeforces` folder. You may also
+configure a second repository that stores Codeforces submissions directly. Create every intended
+repository before the token because GitHub asks you to select them while creating it.
 
 ### 1. Create the solution repository
 
@@ -193,6 +197,9 @@ repository first because GitHub asks you to select it while creating the token.
    ```text
    https://github.com/your-user/coding-solutions
    ```
+
+Repeat these steps with a name such as `codeforces-solutions` if you want separate repositories.
+Initialize both repositories so each has a default branch.
 
 Changing the solution repository between public and private later does not require a new CodeSync
 installation. The token must continue to have access to that repository.
@@ -217,9 +224,9 @@ format.
 2. Enter a clear token name, such as `CodeSync coding-solutions`.
 3. Add a short description so you remember why the token exists.
 4. Choose an expiration date. A short renewable period is safer than no expiration.
-5. Under **Resource owner**, choose the account or organization that owns the solution repository.
+5. Under **Resource owner**, choose the account or organization that owns the solution repositories.
 6. Under **Repository access**, choose **Only select repositories**.
-7. Select only the solution repository created above.
+7. Select the primary repository and, if used, the separate Codeforces repository.
 8. Open **Repository permissions**.
 9. Set **Contents** to **Read and write**.
 10. Leave every other permission at its default unless GitHub requires read-only metadata.
@@ -237,7 +244,7 @@ Do not use:
 - a token with workflow, administration, issues, or account permissions.
 
 CodeSync only reads and creates or updates files through GitHub's repository Contents API. The
-selected repository's **Contents: Read and write** permission is sufficient.
+selected repositories' **Contents: Read and write** permission is sufficient.
 
 If an organization owns the repository, its policy may require an administrator to approve the
 token. CodeSync cannot use it until that approval is complete.
@@ -269,7 +276,9 @@ the token is malformed, expired, pending organization approval, or blocked by a 
 5. Wait for the CodeSync dashboard to appear.
 
 CodeSync verifies that the repository exists and that the token can write to it. It also records
-whether the destination is currently public or private.
+whether the destination is currently public or private. This becomes the LeetCode repository and
+the default shared destination for Codeforces. Configure a separate Codeforces repository from
+Settings after onboarding if you want split destinations.
 
 ### 3. Reload coding-platform tabs
 
@@ -345,10 +354,20 @@ CodeSync then reads the source from the signed-in submission page and the statem
 page. If Codeforces does not show the source to the current browser session, CodeSync cannot upload
 it.
 
-Each accepted Codeforces submission is stored under a separate `Codeforces` directory:
+In the default shared mode, each accepted Codeforces submission is stored under a `Codeforces`
+directory in the primary repository:
 
 ```text
 Codeforces/<contest-id-and-index>-<problem-slug>/
+|-- README.md
+`-- <problem-slug>.<extension>
+```
+
+In separate mode, CodeSync writes the problem folder directly to the Codeforces repository, without
+the extra `Codeforces` segment:
+
+```text
+<contest-id-and-index>-<problem-slug>/
 |-- README.md
 `-- <problem-slug>.<extension>
 ```
@@ -378,12 +397,43 @@ coding-solutions/
         `-- watermelon.cpp
 ```
 
-CodeSync writes to the repository's default branch. A single accepted problem may create more than
+With separate destinations, the repositories look like this:
+
+```text
+leetcode-solutions/
+`-- 1-two-sum/
+    |-- README.md
+    `-- two-sum.py
+
+codeforces-solutions/
+`-- 4a-watermelon/
+    |-- README.md
+    `-- watermelon.cpp
+```
+
+CodeSync writes to each repository's default branch. A single accepted problem may create more than
 one commit because the README, notes, and source file are uploaded separately.
 
 ## Settings
 
 Open the CodeSync popup and select the gear icon after completing setup.
+
+### Choose the Codeforces repository
+
+Open **Codeforces repo** and choose one of these modes:
+
+- **Use linked repository** keeps both platforms in the primary repository. Codeforces submissions
+  go below its `Codeforces/` folder. This is the default and preserves existing installations.
+- **Use separate repository** accepts a complete second repository URL and writes Codeforces problem
+  folders directly to that repository.
+
+The current fine-grained token must include every selected repository with **Contents: Read and
+write** access. If the token currently includes only the primary repository, edit its repository
+access in GitHub token settings before saving the separate destination. CodeSync rejects a second
+URL that is identical to the primary repository because linked mode already covers that case.
+
+Switching back to linked mode removes only the saved separate-destination setting. It does not move
+or delete files in either GitHub repository.
 
 ### Set a subdirectory
 
@@ -393,8 +443,9 @@ Use **Set a subdirectory** to place future uploads below a path such as:
 DSA/Practice
 ```
 
-LeetCode files will then appear under `DSA/Practice/<problem>`. Codeforces files will appear under
-`DSA/Practice/Codeforces/<problem>`.
+LeetCode files will then appear under `DSA/Practice/<problem>`. In linked mode, Codeforces files
+appear under `DSA/Practice/Codeforces/<problem>`. In separate mode, they appear under
+`DSA/Practice/<problem>` in the Codeforces repository.
 
 A valid subdirectory:
 
@@ -412,6 +463,9 @@ Use **Change or unlink repo** to paste another complete GitHub repository URL. T
 must have **Contents: Read and write** access to the new repository. If the token was restricted to
 the old repository, create or edit a fine-grained token before changing the link.
 
+This setting changes the primary LeetCode repository. Codeforces follows it in linked mode. A saved
+separate Codeforces repository is unaffected.
+
 Selecting **Unlink Repo** removes the saved repository owner and name but keeps the token. The popup
 returns to the repository-linking step.
 
@@ -423,8 +477,9 @@ delete files already uploaded to GitHub or clear the locally tracked submission 
 ### Reset all local data
 
 Use **Reset All** only when you want to erase the extension's local configuration and statistics.
-It removes the token, linked repository, subdirectory, Codeforces handle, solved counts, and locally
-tracked Codeforces submission IDs. It does not delete any GitHub repository or committed solution.
+It removes the token, both repository choices, subdirectory, Codeforces handle, solved counts, and
+locally tracked Codeforces submission IDs. It does not delete any GitHub repository or committed
+solution.
 
 ## Security model
 
@@ -460,7 +515,7 @@ Removing it from Git history alone does not make the old value safe.
 
 | Permission | Why CodeSync needs it |
 | --- | --- |
-| `storage` | Store the token, repository choice, optional handle, and local statistics |
+| `storage` | Store the token, repository choices, optional handle, and local statistics |
 | `webRequest` | Detect completed submission requests without reading general browsing history |
 | `https://leetcode.com/*` | Run the LeetCode content script and query submission details |
 | `https://codeforces.com/*` | Validate the handle and read recent submission pages |
@@ -531,8 +586,8 @@ Check that:
 
 - the token begins with `github_pat_`;
 - it has not expired or been revoked;
-- its resource owner owns the destination repository;
-- **Only select repositories** includes the destination;
+- its resource owner owns every destination repository;
+- **Only select repositories** includes every destination;
 - **Contents** is set to **Read and write**;
 - any required organization approval is complete.
 
@@ -573,8 +628,8 @@ accepted submission as the latest result, submit the intended solution again.
 ### The flame appears but files are not where expected
 
 Check the configured subdirectory and the repository's default branch. Codeforces always adds a
-`Codeforces` segment below the configured subdirectory. Changing the setting does not move older
-files.
+`Codeforces` segment in linked mode. Separate mode writes directly below the configured subdirectory
+in the second repository. Changing either setting does not move older files.
 
 ### The extension stopped working after moving the folder
 
@@ -599,7 +654,7 @@ Use this order if you no longer need the extension:
 5. Open `chrome://extensions` and select **Remove** on the CodeSync card.
 6. Delete the local cloned repository if you do not need the source.
 
-Removing CodeSync does not delete the destination repository or any uploaded solutions. Deleting
+Removing CodeSync does not delete the destination repositories or any uploaded solutions. Deleting
 the local source folder is recoverable by cloning this private repository again. Revoking the token
 cannot be undone, but you can create a replacement later.
 

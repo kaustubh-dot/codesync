@@ -10,6 +10,10 @@ type GithubUser = {
   login: string;
 };
 
+type RepositoryVisibilityKey =
+  | 'github_repo_visibility'
+  | 'github_codeforces_repo_visibility';
+
 const languagesToExtensions: Record<string, string> = {
   Python: '.py',
   Python3: '.py',
@@ -69,6 +73,7 @@ export default class GithubHandler {
   private repoOwner = '';
   private repo = '';
   private subdirectory = '';
+  private usesSeparateCodeforcesRepository = false;
 
   async loadTokenFromStorage(): Promise<string> {
     const result = await chrome.storage.local.get('github_leetsync_token');
@@ -98,7 +103,10 @@ export default class GithubHandler {
     return user;
   }
 
-  async checkIfRepoExists(fullName: string): Promise<boolean> {
+  async checkIfRepoExists(
+    fullName: string,
+    visibilityKey: RepositoryVisibilityKey = 'github_repo_visibility',
+  ): Promise<boolean> {
     const token = await this.loadTokenFromStorage();
     const normalized = fullName.replace(/\.git$/i, '').trim();
     if (!token || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(normalized)) return false;
@@ -116,7 +124,7 @@ export default class GithubHandler {
     const writable = repository.permissions?.push !== false;
     if (writable) {
       await chrome.storage.local.set({
-        github_repo_visibility: repository.private === false ? 'public' : 'private',
+        [visibilityKey]: repository.private === false ? 'public' : 'private',
       });
     }
     return writable;
@@ -126,17 +134,27 @@ export default class GithubHandler {
     return languagesToExtensions[lang];
   }
 
-  private async loadConfiguration(): Promise<boolean> {
+  private async loadConfiguration(platform: 'leetcode' | 'codeforces'): Promise<boolean> {
     const result = await chrome.storage.local.get([
       'github_leetsync_token',
       'github_username',
       'github_repo_owner',
       'github_leetsync_repo',
+      'github_codeforces_repo_owner',
+      'github_codeforces_repo',
       'github_leetsync_subdirectory',
     ]);
     this.accessToken = storedString(result.github_leetsync_token);
-    this.repoOwner = storedString(result.github_repo_owner) || storedString(result.github_username);
-    this.repo = storedString(result.github_leetsync_repo);
+    const codeforcesOwner = storedString(result.github_codeforces_repo_owner);
+    const codeforcesRepo = storedString(result.github_codeforces_repo);
+    this.usesSeparateCodeforcesRepository =
+      platform === 'codeforces' && !!(codeforcesOwner && codeforcesRepo);
+    this.repoOwner = this.usesSeparateCodeforcesRepository
+      ? codeforcesOwner
+      : storedString(result.github_repo_owner) || storedString(result.github_username);
+    this.repo = this.usesSeparateCodeforcesRepository
+      ? codeforcesRepo
+      : storedString(result.github_leetsync_repo);
     this.subdirectory = storedString(result.github_leetsync_subdirectory);
     return !!(this.accessToken && this.repoOwner && this.repo);
   }
@@ -187,7 +205,7 @@ export default class GithubHandler {
   }
 
   async submitCodeforces(submission: CodeforcesSubmission): Promise<boolean> {
-    if (!(await this.loadConfiguration()) || submission?.verdict !== 'OK') return false;
+    if (!(await this.loadConfiguration('codeforces')) || submission?.verdict !== 'OK') return false;
 
     const synced = (await chrome.storage.local.get('codeforces_synced_submissions'))
       .codeforces_synced_submissions;
@@ -217,7 +235,11 @@ export default class GithubHandler {
       .replace(/[^A-Za-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .toLowerCase() || 'problem';
-    const basePath = [this.subdirectory, 'Codeforces', `${problemId}-${slug}`]
+    const basePath = [
+      this.subdirectory,
+      this.usesSeparateCodeforcesRepository ? '' : 'Codeforces',
+      `${problemId}-${slug}`,
+    ]
       .filter(Boolean)
       .join('/');
     const details = [
@@ -313,7 +335,7 @@ export default class GithubHandler {
   }
 
   async submit(submission: Submission): Promise<boolean> {
-    if (!(await this.loadConfiguration()) || !submission || submission.statusCode !== 10) {
+    if (!(await this.loadConfiguration('leetcode')) || !submission || submission.statusCode !== 10) {
       return false;
     }
 
