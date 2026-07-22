@@ -46,6 +46,21 @@ const languagesToExtensions: Record<string, string> = {
 
 const storedString = (value: unknown) => (typeof value === 'string' ? value : '');
 
+const credentialPatterns = [
+  /github_pat_[A-Za-z0-9_]{20,}/,
+  /gh[pousr]_[A-Za-z0-9]{20,}/,
+  /(?:AKIA|ASIA)[A-Z0-9]{16}/,
+  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+  /xox[baprs]-[A-Za-z0-9-]{20,}/,
+  /sk_(?:live|test)_[A-Za-z0-9]{16,}/,
+  /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/,
+  /AIza[0-9A-Za-z_-]{35}/,
+  /npm_[A-Za-z0-9]{30,}/,
+];
+
+export const containsLikelyCredential = (content: string) =>
+  credentialPatterns.some((pattern) => pattern.test(content));
+
 export default class GithubHandler {
   private readonly baseUrl = 'https://api.github.com';
   private accessToken = '';
@@ -96,7 +111,13 @@ export default class GithubHandler {
     if (!response.ok) return false;
 
     const repository = await response.json();
-    return repository.permissions?.push !== false;
+    const writable = repository.permissions?.push !== false;
+    if (writable) {
+      await chrome.storage.local.set({
+        github_repo_visibility: repository.private === false ? 'public' : 'private',
+      });
+    }
+    return writable;
   }
 
   getProblemExtension(lang: string) {
@@ -229,6 +250,12 @@ export default class GithubHandler {
     const { code, lang, memoryDisplay, memoryPercentile, notes, question, runtimeDisplay, runtimePercentile } =
       submission;
     if (!question?.titleSlug || !/^[A-Za-z0-9-]+$/.test(question.titleSlug)) return false;
+    if (containsLikelyCredential(`${code}\n${notes ?? ''}`)) {
+      await chrome.storage.local.set({
+        lastUploadError: 'Upload blocked because the solution or notes may contain a credential.',
+      });
+      return false;
+    }
 
     const questionId = String(question.questionFrontendId ?? question.questionId ?? 'unknown').replace(
       /[^A-Za-z0-9_.-]/g,
@@ -274,6 +301,7 @@ export default class GithubHandler {
         ? (storedProblems as Record<string, unknown>)
         : {};
     await chrome.storage.local.set({
+      lastUploadError: null,
       lastSolved: { slug: question.titleSlug, timestamp },
       problemsSolved: {
         ...problemsSolved,

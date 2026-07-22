@@ -1,6 +1,6 @@
 # Personal LeetSync
 
-A private, hardened Chrome extension that syncs accepted LeetCode submissions to one GitHub
+A hardened Chrome extension that syncs accepted LeetCode submissions to one public or private GitHub
 repository. It preserves LeetSync's solution, README, notes, subdirectory, streak, statistics, and
 success-icon features while narrowing access to the minimum practical scope.
 
@@ -18,6 +18,8 @@ license.
 - Has no OAuth client secret, callback script, analytics, remote code, or third-party server.
 - Requests only `storage` and `webRequest`, plus host access to LeetCode and the GitHub API.
 - Validates repository write access and rejects unsafe repository subdirectory paths.
+- Detects common credential formats in solution code and notes before uploading. A likely match is
+  blocked locally and shown in the extension popup.
 
 Chrome does not provide a general-purpose OS credential vault to extensions. The GitHub token is
 therefore stored locally in the Chrome profile so automatic syncing continues after a browser
@@ -35,6 +37,8 @@ to contain the impact of browser-profile compromise.
 5. Generate the token and paste it into Personal LeetSync. GitHub only shows the token once.
 
 The extension validates both the token and write access before saving the selected repository.
+Public repositories use the same narrow token permissions as private repositories. Never use a
+broader GitHub CLI or classic personal access token.
 
 ## Install locally
 

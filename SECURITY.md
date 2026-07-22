@@ -1,7 +1,8 @@
 # Security policy
 
-This is a private personal fork. Do not publish GitHub tokens, extension storage exports, browser
-profiles, or built packages containing personal data in an issue or commit.
+This is a personal hardened fork that supports public or private solution repositories. Do not
+publish GitHub tokens, extension storage exports, browser profiles, or built packages containing
+personal data in an issue or commit.
 
 ## Supported version
 
@@ -16,6 +17,10 @@ have been compromised.
 The token is stored in `chrome.storage.local` with access restricted to trusted extension contexts.
 It is not encrypted by this extension. This design avoids cloud synchronization and page access but
 cannot protect a token from malware or an attacker who already controls the Chrome profile.
+
+Before uploading, the extension blocks common GitHub, cloud, package-registry, payment, Slack, and
+private-key credential formats found in solution code or notes. This is defense in depth, not a
+complete secret scanner; revoke any credential that is ever published.
 
 ## Reporting
 

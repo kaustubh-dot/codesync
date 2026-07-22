@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertIcon,
   Box,
   Container,
   Heading,
@@ -78,16 +80,32 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
   }>();
   const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
+  const [repoVisibility, setRepoVisibility] = React.useState('private');
+  const [uploadError, setUploadError] = React.useState('');
 
   const solvedProblemsToday = problemsPerDay?.[new Date().toLocaleDateString()] || 0;
 
   React.useEffect(() => {
     chrome.storage.local.get(
-      ['problemsSolved', 'github_repo_owner', 'github_leetsync_repo'],
+      [
+        'problemsSolved',
+        'github_repo_owner',
+        'github_leetsync_repo',
+        'github_repo_visibility',
+        'lastUploadError',
+      ],
       (result) => {
-        const { problemsSolved, github_repo_owner, github_leetsync_repo } = result;
+        const {
+          problemsSolved,
+          github_repo_owner,
+          github_leetsync_repo,
+          github_repo_visibility,
+          lastUploadError,
+        } = result;
         setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
         setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
+        setRepoVisibility(github_repo_visibility === 'public' ? 'public' : 'private');
+        setUploadError(typeof lastUploadError === 'string' ? lastUploadError : '');
         if (!problemsSolved) return;
         let [easy, medium, hard] = [0, 0, 0];
         const problemSolvedValues = Object.values(problemsSolved);
@@ -128,6 +146,12 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
         <SettingsMenu />
       </Box>
       <VStack w="100%" h="100%" align="flex-start" justify={'flex-start'} spacing={8}>
+        {repoVisibility === 'public' && (
+          <Alert status={uploadError ? 'error' : 'info'} fontSize="sm" borderRadius="md">
+            <AlertIcon />
+            {uploadError || 'Public repository linked. Credential checks are enabled.'}
+          </Alert>
+        )}
         <HStack w="100%" align={'center'}>
           {solvedProblemsToday ? (
             <Box>

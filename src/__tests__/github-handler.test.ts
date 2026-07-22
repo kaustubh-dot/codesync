@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import GithubHandler from '../handlers/GithubHandler';
+import GithubHandler, { containsLikelyCredential } from '../handlers/GithubHandler';
 import type { QuestionDifficulty } from '../types/Question';
 import { Submission } from '../types/Submission';
 
@@ -28,6 +28,12 @@ describe('GithubHandler', () => {
     expect(handler.createDifficultyBadge('Medium' as QuestionDifficulty)).toContain(
       'Difficulty-Medium-orange',
     );
+  });
+
+  it('detects likely credentials without blocking ordinary solution text', () => {
+    expect(containsLikelyCredential('const answer = 42; // Use a map')).toBe(false);
+    expect(containsLikelyCredential(`token = "github_pat_${'a'.repeat(24)}"`)).toBe(true);
+    expect(containsLikelyCredential('-----BEGIN PRIVATE KEY-----')).toBe(true);
   });
 
   it('validates a token before storing it locally', async () => {
@@ -68,6 +74,19 @@ describe('GithubHandler', () => {
       }),
     );
     expect(await new GithubHandler().checkIfRepoExists('owner/repo')).toBe(false);
+  });
+
+  it('records public repository visibility', async () => {
+    stored.github_leetsync_token = 'token';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ private: false, permissions: { push: true } }),
+      }),
+    );
+    expect(await new GithubHandler().checkIfRepoExists('owner/public-solutions')).toBe(true);
+    expect(stored.github_repo_visibility).toBe('public');
   });
 
   it('uploads the README, notes, and solution through the trusted worker configuration', async () => {
@@ -135,5 +154,26 @@ describe('GithubHandler', () => {
     } as Submission;
     expect(await new GithubHandler().submit(submission)).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('blocks a submission containing a likely credential before uploading', async () => {
+    Object.assign(stored, {
+      github_leetsync_token: 'token',
+      github_username: 'user',
+      github_repo_owner: 'owner',
+      github_leetsync_repo: 'solutions',
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const submission = {
+      code: `const token = "github_pat_${'a'.repeat(24)}";`,
+      notes: '',
+      statusCode: 10,
+      question: { titleSlug: 'two-sum', questionId: '1' },
+    } as Submission;
+
+    expect(await new GithubHandler().submit(submission)).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(stored.lastUploadError).toContain('credential');
   });
 });

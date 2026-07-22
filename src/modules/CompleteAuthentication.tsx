@@ -170,8 +170,8 @@ const StartOnboarding = ({ nextStep }: { nextStep: () => void }) => (
     <VStack w="100%">
       <Heading size="lg">Personal LeetSync</Heading>
       <Text color="GrayText" fontSize="sm" w="90%" textAlign="center">
-        Sync accepted LeetCode submissions to your private GitHub repository without sharing
-        browser sessions or broad account access.
+        Sync accepted LeetCode submissions to a public or private GitHub repository without sharing
+        browser sessions or broad account access. Public uploads are checked for likely credentials.
       </Text>
     </VStack>
     <VStack w="100%" py={4}>
