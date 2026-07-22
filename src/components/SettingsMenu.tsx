@@ -8,7 +8,6 @@ import {
   FormErrorMessage,
   FormHelperText,
   HStack,
-  IconButton,
   Input,
   InputGroup,
   Menu,
@@ -259,7 +258,9 @@ const SettingsMenu = () => {
   if (!githubUsername || !githubOwner || !githubRepo || !isConfigured) return null;
   return (
     <Menu size={'lg'} placement="bottom-end">
-      <MenuButton as={IconButton} aria-label="Options" icon={<CiSettings />} variant="outline" />
+      <MenuButton as={Button} aria-label="Settings" leftIcon={<CiSettings />} variant="outline">
+        Settings
+      </MenuButton>
       <MenuList fontSize={'14px'}>
         <HStack px={4} py={2}>
           <Avatar name={githubUsername} size="sm" />

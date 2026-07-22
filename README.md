@@ -333,7 +333,7 @@ supported.
 
 1. Sign in at [codeforces.com](https://codeforces.com/).
 2. Open the CodeSync popup.
-3. Select the gear icon in the popup.
+3. Select the **Settings** button in the top-right corner of the popup.
 4. Select **Connect Codeforces**.
 5. Enter your Codeforces handle.
 6. Select **Save**.
@@ -422,7 +422,8 @@ one commit because the README, notes, and source file are uploaded separately.
 
 ## Settings
 
-Open the CodeSync popup and select the gear icon after completing setup.
+Open the CodeSync popup and select the **Settings** button in the top-right corner after completing
+setup.
 
 ### Choose the Codeforces repository
 
