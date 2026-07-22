@@ -227,11 +227,17 @@ format.
 5. Under **Resource owner**, choose the account or organization that owns the solution repositories.
 6. Under **Repository access**, choose **Only select repositories**.
 7. Select the primary repository and, if used, the separate Codeforces repository.
-8. Open **Repository permissions**.
-9. Set **Contents** to **Read and write**.
+8. Expand **Repository permissions**, select **Add permissions**, and add **Contents**.
+9. Use the access dropdown beside **Contents** and select **Read and write**. GitHub's API calls
+   this `Contents: write`; write access also includes the reads CodeSync needs.
 10. Leave every other permission at its default unless GitHub requires read-only metadata.
 11. Select **Generate token**.
 12. Copy the token while GitHub still displays it. It should start with `github_pat_`.
+
+If you do not see **Contents** with a **Read and write** choice, confirm the page heading says
+**Fine-grained personal access tokens**. The **Tokens (classic)** page instead shows scopes such as
+`repo` and is not the setup documented here. Also choose the correct **Resource owner** and select
+the solution repository before opening **Repository permissions**.
 
 GitHub documents the same resource-owner and selected-repository controls in
 [Managing your personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
