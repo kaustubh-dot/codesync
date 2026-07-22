@@ -1,4 +1,3 @@
-import './App.css';
 import PopupPage from './pages/popup';
 import { ChakraProvider } from '@chakra-ui/react';
 

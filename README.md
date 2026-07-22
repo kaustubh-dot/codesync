@@ -10,8 +10,8 @@ count.
 
 This project is based on [LeetSync](https://github.com/LeetSync/LeetSync). Codeforces behavior was
 informed by [CodeforcesSync](https://github.com/mhdnazrul/CodeforcesSync) and
-[cf-pusher](https://github.com/SarJ2004/cf-pusher). All three reference projects use the MIT
-license; CodeSync retains its existing MIT license.
+[cf-pusher](https://github.com/SarJ2004/cf-pusher). Attribution links are retained here because this
+is a private derivative project.
 
 ## Security design
 

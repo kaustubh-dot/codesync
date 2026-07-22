@@ -25,7 +25,5 @@ await build({
   legalComments: 'none',
   loader: {
     '.css': 'css',
-    '.gif': 'file',
-    '.png': 'file',
   },
 });

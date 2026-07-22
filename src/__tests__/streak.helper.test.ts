@@ -1,13 +1,8 @@
 import {
   getTotalNumberOfStreaks,
   formatProblemsPerDay,
-  hasSolvedAProblemToday,
   generateTitle,
 } from '../utils/streak.helper';
-
-const getDaysBefore = (numberOfDays: number) => {
-  return new Date(new Date().getTime() - numberOfDays * 24 * 60 * 60 * 1000);
-};
 
 describe('Streak Helper Functions', () => {
   beforeEach(() => {
@@ -111,40 +106,6 @@ describe('Streak Helper Functions', () => {
       const problems = [{ timestamp: 1705291200000.9 }];
       const result = formatProblemsPerDay(problems);
       expect(result['2024-01-15']).toBe(1);
-    });
-  });
-
-  describe('hasSolvedAProblemToday', () => {
-    it('should return true when last solved is today', () => {
-      expect(hasSolvedAProblemToday(new Date('2024-01-15T12:00:00Z').getTime())).toBe(true);
-    });
-    it('should return false when last solved is not today', () => {
-      expect(hasSolvedAProblemToday(new Date('2024-01-14T12:00:00Z').getTime())).toBe(false);
-    });
-    it('should handle invalid input', () => {
-      expect(hasSolvedAProblemToday(NaN)).toBe(false);
-      expect(hasSolvedAProblemToday(0)).toBe(false);
-    });
-    it('should handle edge case at midnight', () => {
-      expect(hasSolvedAProblemToday(new Date('2024-01-15T00:00:00Z').getTime())).toBe(true);
-    });
-    it('should handle timestamps at the end of the day', () => {
-      expect(hasSolvedAProblemToday(new Date('2024-01-15T23:59:59Z').getTime())).toBe(true);
-    });
-    it('should handle timestamps in different timezones', () => {
-      // Simulate a timestamp for 2024-01-15 in UTC+8
-      const timestamp = Date.UTC(2024, 0, 15, 8, 0, 0);
-      expect(hasSolvedAProblemToday(timestamp)).toBe(true);
-    });
-    it('should return false for string input', () => {
-      // @ts-expect-error
-      expect(hasSolvedAProblemToday('2024-01-15')).toBe(false);
-    });
-    it('should return false for null/undefined', () => {
-      // @ts-expect-error
-      expect(hasSolvedAProblemToday(null)).toBe(false);
-      // @ts-expect-error
-      expect(hasSolvedAProblemToday(undefined)).toBe(false);
     });
   });
 

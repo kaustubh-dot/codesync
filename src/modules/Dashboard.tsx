@@ -25,9 +25,6 @@ import {
 } from '../utils/streak.helper';
 import { capitalize } from '../utils/string-manipulation.helper';
 import { Footer } from './Footer';
-import flameGif from '../assets/flame.gif';
-
-interface DashboardProps {}
 
 const LinkedGithubComponents = () => {
   const [githubOwner, setGithubOwner] = React.useState('');
@@ -68,7 +65,7 @@ const LinkedGithubComponents = () => {
     </Box>
   );
 };
-const Dashboard: React.FC<DashboardProps> = ({}) => {
+const Dashboard = () => {
   const [solvedProblems, setSolvedProblems] = React.useState({
     easy: 0,
     medium: 0,
@@ -175,10 +172,10 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
             <Box>
               <Tooltip label="Solve more problems to increase your flame!">
                 <Image
-                  src={flameGif}
+                  src="icon-fire-96x96.gif"
                   alt="flame"
                   height={`clamp(20px, ${
-                    20 + solvedProblemsToday * 20 //todo: can be weighted based on difficulty
+                    20 + solvedProblemsToday * 20
                   }px, 130px)`}
                   width="fit-content"
                   objectFit={'contain'}

@@ -1,7 +1,5 @@
-node_modules
-dist
+node_modules/
 .DS_Store
-*.vscode
-build
+build/
 .env
-src/config.production.js
+.vscode/

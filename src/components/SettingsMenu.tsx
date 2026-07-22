@@ -1,6 +1,5 @@
 import {
   Avatar,
-  Badge,
   Button,
   ButtonGroup,
   Code,
@@ -30,16 +29,14 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
-import { BiCalendarHeart, BiTrashAlt, BiUnlink } from 'react-icons/bi';
+import { BiTrashAlt, BiUnlink } from 'react-icons/bi';
 import { CiSettings } from 'react-icons/ci';
 import { SiCodeforces } from 'react-icons/si';
 import { TbSlashes } from 'react-icons/tb';
 import { CodeforcesHandler, GithubHandler } from '../handlers';
 import { CustomEditableComponent } from './Editable';
 
-interface SettingsMenuProps {}
-
-const SettingsMenu: React.FC<SettingsMenuProps> = () => {
+const SettingsMenu = () => {
   const [subdirectory, setSubdirectoryValue] = useState<string | null>(null);
 
   const [isOpen, setOpen] = useState<
@@ -379,18 +376,6 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
               </PopoverBody>
             </PopoverContent>
           </Popover>
-
-          <MenuItem
-            h="100%"
-            icon={<BiCalendarHeart fontSize={'1.2rem'} />}
-            minH="40px"
-            onClick={() => window.open('https://strawpoll.com/polls/wAg3AEW0Oy8', '_blank')}
-          >
-            Set a reminder{' '}
-            <Badge size="sm" fontSize={'xs'} colorScheme="gray">
-              Soon 🤩
-            </Badge>
-          </MenuItem>
         </MenuGroup>
         <Divider />
         <MenuGroup title="Danger Area">

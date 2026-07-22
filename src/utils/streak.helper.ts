@@ -33,14 +33,6 @@ export const formatProblemsPerDay = (
   return problemsPerDay;
 };
 
-export const hasSolvedAProblemToday = (lastSolved: number): boolean => {
-  if (!lastSolved || isNaN(lastSolved)) return false;
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const lastSolvedStr = new Date(lastSolved).toISOString().split('T')[0];
-  return todayStr === lastSolvedStr;
-};
-
 export function generateTitle(dailyProblemsSolved: number): [string, string] {
   if (dailyProblemsSolved == null || isNaN(dailyProblemsSolved)) dailyProblemsSolved = 0;
   if (dailyProblemsSolved < 0) dailyProblemsSolved = 0;
