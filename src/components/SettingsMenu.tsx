@@ -25,7 +25,6 @@ import {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
-  Tag,
   Text,
   Tooltip,
   VStack,
@@ -44,49 +43,55 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
 
   const [isOpen, setOpen] = useState<'unlink' | 'clear' | 'subdirectory' | null>(null);
   const [githubUsername, setGithubUsername] = React.useState('');
+  const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
   const [newRepoURL, setNewRepoURL] = useState('');
-  const [accessToken, setAccessToken] = useState('');
+  const [isConfigured, setIsConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const unlinkRepo = async () => {
-    chrome.storage.sync.set(
-      {
-        github_leetsync_repo: null,
-      },
-      () => {
-        setGithubRepo('');
-        //refresh the page
-        window.location.reload();
-      },
-    );
+    await chrome.storage.local.remove(['github_repo_owner', 'github_leetsync_repo']);
+    setGithubOwner('');
+    setGithubRepo('');
+    window.location.reload();
   };
   const handleLinkRepo = async () => {
     if (!newRepoURL) return setError('Repository URL is required');
-    if (!accessToken) return setError('Access token is required');
-
-    const repoName = newRepoURL.split('/').pop();
-    const username = newRepoURL.split('/').slice(-2)[0];
-    if (!repoName || !username) {
+    let url: URL;
+    try {
+      url = new URL(newRepoURL);
+    } catch {
+      return setError('Invalid repository URL');
+    }
+    const [owner, rawRepo, ...extra] = url.pathname.split('/').filter(Boolean);
+    const repoName = rawRepo?.replace(/\.git$/i, '');
+    if (url.hostname !== 'github.com' || !owner || !repoName || extra.length) {
       return setError('Invalid repository URL');
     }
 
+    setError('');
     setLoading(true);
-    const github = new GithubHandler();
-    const isFound = await github.checkIfRepoExists(`${username}/${repoName}`);
-    setLoading(false);
-    if (!isFound) {
-      return setError('Repository not found');
-    }
-    chrome.storage.sync.set({ github_leetsync_repo: repoName }, () => {
-      console.log('Repository Linked Successfully');
+    try {
+      const github = new GithubHandler();
+      const isFound = await github.checkIfRepoExists(`${owner}/${repoName}`);
+      if (!isFound) return setError('Repository not found or token lacks write access');
+
+      await chrome.storage.local.set({
+        github_repo_owner: owner,
+        github_leetsync_repo: repoName,
+      });
+      setGithubOwner(owner);
       setGithubRepo(repoName);
       setOpen(null);
-    });
+    } catch {
+      setError('Could not verify the repository. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
   const resetAll = () => {
-    chrome.storage.sync.clear(() => {
+    chrome.storage.local.clear(() => {
       window.location.reload();
     });
   };
@@ -100,26 +105,28 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
     //validate the subdirectory
     if (subdirectory === '' || subdirectory === null) {
       //this means the user wants to remove the subdirectory
-      await chrome.storage.sync.remove('github_leetsync_subdirectory');
+      await chrome.storage.local.remove('github_leetsync_subdirectory');
       setLoading(false);
       return;
     }
-    if (!subdirectory?.match(/^[a-zA-Z0-9-_/]+$/)) {
+    const parts = subdirectory.split('/').filter(Boolean);
+    if (parts.some((part) => part === '..' || !/^[a-zA-Z0-9_.-]+$/.test(part))) {
       setLoading(false);
 
       return setError('Invalid subdirectory');
     }
 
-    await chrome.storage.sync.set({
+    await chrome.storage.local.set({
       github_leetsync_subdirectory: trimSubdirectory(subdirectory),
     });
     setLoading(false);
   };
 
   useEffect(() => {
-    chrome.storage.sync.get(
+    chrome.storage.local.get(
       [
         'github_username',
+        'github_repo_owner',
         'github_leetsync_repo',
         'github_leetsync_token',
         'github_leetsync_subdirectory',
@@ -127,19 +134,23 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
       (result) => {
         const {
           github_username,
+          github_repo_owner,
           github_leetsync_repo,
           github_leetsync_token,
           github_leetsync_subdirectory,
         } = result;
-        setGithubUsername(github_username);
-        setGithubRepo(github_leetsync_repo);
-        setAccessToken(github_leetsync_token);
-        setSubdirectoryValue(github_leetsync_subdirectory);
+        setGithubUsername(typeof github_username === 'string' ? github_username : '');
+        setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
+        setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
+        setIsConfigured(!!github_leetsync_token);
+        setSubdirectoryValue(
+          typeof github_leetsync_subdirectory === 'string' ? github_leetsync_subdirectory : null,
+        );
       },
     );
   }, []);
 
-  if (!githubUsername || !githubRepo || !accessToken) return null;
+  if (!githubUsername || !githubOwner || !githubRepo || !isConfigured) return null;
   return (
     <Menu size={'lg'} placement="bottom-end">
       <MenuButton as={IconButton} aria-label="Options" icon={<CiSettings />} variant="outline" />
@@ -266,7 +277,9 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
                     <FormHelperText fontSize={'xs'}>
                       You next submissions will be uploaded at{' '}
                       <Code fontSize="xs">
-                        {`3ba2ii/leetcode-problem-solving/${(subdirectory && trimSubdirectory(subdirectory)) || ''}`}
+                        {`${githubOwner}/${githubRepo}/${
+                          (subdirectory && trimSubdirectory(subdirectory)) || ''
+                        }`}
                       </Code>
                     </FormHelperText>
                   ) : (

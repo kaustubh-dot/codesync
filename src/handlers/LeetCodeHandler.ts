@@ -3,14 +3,6 @@ import { Submission } from '../types/Submission';
 
 class LeetCodeHandler {
   async getSubmission(questionSlug: string): Promise<Submission | null> {
-    const leetcode_session = (await chrome.storage.sync.get('leetcode_session'))?.[
-      'leetcode_session'
-    ];
-
-    if (!leetcode_session) {
-      return null;
-    }
-
     const submissions = (await getAllSubmission(questionSlug)) as any;
 
     if (!submissions?.questionSubmissionList?.submissions?.[0]?.id) {
@@ -20,7 +12,7 @@ class LeetCodeHandler {
 
     const latestSubmissionId = submissions?.questionSubmissionList?.submissions?.[0].id;
 
-    const result = await getSubmission(latestSubmissionId, leetcode_session);
+    const result = await getSubmission(latestSubmissionId);
 
     if (!result?.submissionDetails) return null;
 

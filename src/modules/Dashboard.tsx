@@ -28,14 +28,14 @@ import flameGif from '../assets/flame.gif';
 interface DashboardProps {}
 
 const LinkedGithubComponents = () => {
-  const [githubUsername, setGithubUsername] = React.useState('');
+  const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
 
   useEffect(() => {
-    chrome.storage.sync.get(['github_username', 'github_leetsync_repo'], (result) => {
-      const { github_username, github_leetsync_repo } = result;
-      setGithubUsername(github_username);
-      setGithubRepo(github_leetsync_repo);
+    chrome.storage.local.get(['github_repo_owner', 'github_leetsync_repo'], (result) => {
+      const { github_repo_owner, github_leetsync_repo } = result;
+      setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
+      setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
     });
   }, []);
 
@@ -44,12 +44,12 @@ const LinkedGithubComponents = () => {
       <Text fontSize={'xs'}>
         Linked with{' '}
         <Link
-          href={`https://github.com/${githubUsername}/${githubRepo}`}
+          href={`https://github.com/${githubOwner}/${githubRepo}`}
           target="_blank"
           fontWeight={'semibold'}
           fontFamily={'Mono, monospace, sans-serif'}
         >
-          {githubUsername}/{githubRepo}
+          {githubOwner}/{githubRepo}
         </Link>
         , Unlink by clicking{' '}
         <IconButton
@@ -76,18 +76,18 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
   const [problemsPerDay, setProblemsPerDay] = React.useState<{
     [date: string]: number;
   }>();
-  const [githubUsername, setGithubUsername] = React.useState('');
+  const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
 
   const solvedProblemsToday = problemsPerDay?.[new Date().toLocaleDateString()] || 0;
 
   React.useEffect(() => {
-    chrome.storage.sync.get(
-      ['problemsSolved', 'github_username', 'github_leetsync_repo'],
+    chrome.storage.local.get(
+      ['problemsSolved', 'github_repo_owner', 'github_leetsync_repo'],
       (result) => {
-        const { problemsSolved, github_username, github_leetsync_repo } = result;
-        setGithubUsername(github_username);
-        setGithubRepo(github_leetsync_repo);
+        const { problemsSolved, github_repo_owner, github_leetsync_repo } = result;
+        setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
+        setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
         if (!problemsSolved) return;
         let [easy, medium, hard] = [0, 0, 0];
         const problemSolvedValues = Object.values(problemsSolved);
@@ -160,7 +160,7 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
                   icon={<BiLink />}
                   size="lg"
                   onClick={() => {
-                    window.open(`https://github.com/${githubUsername}/${githubRepo}`, '_blank');
+                    window.open(`https://github.com/${githubOwner}/${githubRepo}`, '_blank');
                   }}
                 />
               </Tooltip>

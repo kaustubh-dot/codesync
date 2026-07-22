@@ -1,155 +1,93 @@
 import { CircularProgress, Container, Heading, VStack } from '@chakra-ui/react';
 import React, { useEffect, useState } from 'react';
 import {
-  AuthorizeWithGithub,
-  AuthorizeWithLeetCode,
+  ConfigureGithubToken,
   SelectRepositoryStep,
   StartOnboarding,
 } from '../modules/CompleteAuthentication';
 import Dashboard from '../modules/Dashboard';
 import { OnboardingLayout } from '../modules/OnboardingLayout';
-interface PopupProps {}
 
 type UserGlobalData = {
   github_leetsync_token: string;
   github_username: string;
+  github_repo_owner: string;
   github_leetsync_repo: string;
-  leetcode_session: string;
 };
 
-const hasCompletedRequirements = (userData: Partial<UserGlobalData>): boolean => {
-  return !!(
-    userData.github_leetsync_token &&
-    userData.github_username &&
-    userData.github_leetsync_repo &&
-    userData.leetcode_session
+const hasCompletedRequirements = (data: Partial<UserGlobalData>) =>
+  !!(
+    data.github_leetsync_token &&
+    data.github_username &&
+    data.github_repo_owner &&
+    data.github_leetsync_repo
   );
-};
-const getUserData = async (): Promise<Partial<UserGlobalData>> => {
-  let userData: Partial<UserGlobalData> = {};
 
-  await chrome.storage.sync
-    .get(['github_leetsync_token', 'github_username', 'github_leetsync_repo', 'leetcode_session'])
-    .then((result) => {
-      userData = {
-        github_leetsync_token: result.github_leetsync_token,
-        github_username: result.github_username,
-        github_leetsync_repo: result.github_leetsync_repo,
-        leetcode_session: result.leetcode_session,
-      };
-    });
+const getUserData = async (): Promise<Partial<UserGlobalData>> =>
+  chrome.storage.local.get([
+    'github_leetsync_token',
+    'github_username',
+    'github_repo_owner',
+    'github_leetsync_repo',
+  ]);
 
-  return userData;
-};
+const steps = [StartOnboarding, ConfigureGithubToken, SelectRepositoryStep];
 
-const STEPS_TO_COMPONENT = {
-  0: StartOnboarding,
-  1: AuthorizeWithGithub,
-  2: AuthorizeWithLeetCode,
-  3: SelectRepositoryStep,
-};
-
-const PopupPage: React.FC<PopupProps> = () => {
+const PopupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isSynced, setIsSynced] = useState(false);
-  const [step, setSteps] = useState(1);
-  const [userData, setUserData] = useState<Partial<UserGlobalData>>({});
+  const [step, setStep] = useState(0);
 
-  const nextStep = () => {
-    setSteps(Math.min(step + 1, Object.keys(STEPS_TO_COMPONENT).length - 1));
-  };
-
-  const _previousStep = () => {
-    setSteps(Math.max(step - 1, 0));
-  };
-
-  const renderStep = () => {
-    if (step === 0) {
-      return <StartOnboarding nextStep={nextStep} />;
-    }
-    if (step === 1) {
-      return <AuthorizeWithGithub nextStep={nextStep} />;
-    }
-    if (step === 2) {
-      return <AuthorizeWithLeetCode nextStep={nextStep} />;
-    }
-    if (step === 3) {
-      return <SelectRepositoryStep nextStep={nextStep} />;
-    }
-  };
-
-  useEffect(() => {
-    setIsLoading(true);
-
-    getUserData().then((result) => {
-      if (result && hasCompletedRequirements(result)) {
-        setIsSynced(true);
-        setUserData(result);
-      }
-      setIsLoading(false);
-    });
-  }, [step]);
-
-  useEffect(() => {
+  const refresh = async () => {
     try {
-      getUserData().then((result) => {
-        setIsLoading(false);
-        if (result && hasCompletedRequirements(result)) {
-          setIsSynced(true);
-          setUserData(result);
-        }
-        let newStep = 3;
-        if (!result.github_leetsync_token && !result.github_username) {
-          newStep = 0;
-        } else if (!result.leetcode_session) {
-          newStep = 2;
-        }
-        setSteps(newStep);
-      });
-    } catch (err) {
-      console.log(err);
+      const data = await getUserData();
+      if (hasCompletedRequirements(data)) {
+        setIsSynced(true);
+      } else if (data.github_leetsync_token && data.github_username) {
+        setStep(2);
+      }
+    } catch {
+      setError('Could not read the extension configuration.');
+    } finally {
       setIsLoading(false);
-      setError('An error occurred while trying to fetch your data.');
     }
+  };
+
+  useEffect(() => {
+    refresh();
   }, []);
 
-  if (isSynced) {
-    //show the dashboard page
-    return <Dashboard />;
-  }
+  if (isSynced) return <Dashboard />;
+  if (error) return <Heading>{error}</Heading>;
 
-  //todo: add error boundary
+  const Step = steps[step];
+  const content = <Step nextStep={() => setStep(Math.min(step + 1, steps.length - 1))} />;
 
-  if (error) {
-    return <Heading>{error}</Heading>;
-  }
   return (
     <Container
       w="450px"
-      paddingTop={'50px'}
-      paddingBottom={'25px'}
+      paddingTop="50px"
+      paddingBottom="25px"
       border="1px solid"
-      borderColor={'gray.200'}
-      borderRadius={'lg'}
-      boxShadow={'md'}
+      borderColor="gray.200"
+      borderRadius="lg"
+      boxShadow="md"
       pos="relative"
     >
-      <VStack w="100%" h="100%" align="center" justify={'center'}>
+      <VStack w="100%" h="100%" align="center" justify="center">
         {isLoading ? (
           <CircularProgress color="green" isIndeterminate />
         ) : step === 0 ? (
-          renderStep()
+          content
         ) : (
-          <OnboardingLayout
-            step={step}
-            totalSteps={Object.keys(STEPS_TO_COMPONENT).length - 1} // minus 1 because we don't count the start page as a step
-          >
-            {renderStep()}
+          <OnboardingLayout step={step} totalSteps={steps.length - 1}>
+            {content}
           </OnboardingLayout>
         )}
       </VStack>
     </Container>
   );
 };
+
 export default PopupPage;

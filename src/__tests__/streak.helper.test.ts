@@ -11,13 +11,13 @@ const getDaysBefore = (numberOfDays: number) => {
 
 describe('Streak Helper Functions', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const mockDate = new Date('2024-01-15T12:00:00Z');
-    jest.setSystemTime(mockDate);
+    vi.setSystemTime(mockDate);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('getTotalNumberOfStreaks', () => {

@@ -1,44 +1,25 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import LeetCodeHandler from '../handlers/LeetCodeHandler';
 import * as submissionApi from '../api/submissions/getSubmission';
 
-jest.mock('../api/submissions/getSubmission');
+vi.mock('../api/submissions/getSubmission');
 
 describe('LeetCodeHandler getSubmission', () => {
-  beforeEach(() => {
-    (global as any).chrome = {
-      storage: { sync: { get: jest.fn() } }
-    };
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('returns null when there is no session token', async () => {
-    (global as any).chrome.storage.sync.get.mockResolvedValue({});
-    const handler = new LeetCodeHandler();
-    const result = await handler.getSubmission('two-sum');
-    expect(result).toBeNull();
-  });
+  afterEach(() => vi.clearAllMocks());
 
   it('returns null when no submissions exist', async () => {
-    (global as any).chrome.storage.sync.get.mockResolvedValue({ leetcode_session: 'sess' });
-    (submissionApi.getAllSubmission as jest.Mock).mockResolvedValue({});
-    const handler = new LeetCodeHandler();
-    const result = await handler.getSubmission('two-sum');
-    expect(result).toBeNull();
+    vi.mocked(submissionApi.getAllSubmission).mockResolvedValue({} as any);
+    expect(await new LeetCodeHandler().getSubmission('two-sum')).toBeNull();
   });
 
-  it('returns latest submission details', async () => {
-    (global as any).chrome.storage.sync.get.mockResolvedValue({ leetcode_session: 'sess' });
-    (submissionApi.getAllSubmission as jest.Mock).mockResolvedValue({
-      questionSubmissionList: { submissions: [{ id: 1 }] }
-    });
+  it('returns the latest submission without extracting a session cookie', async () => {
+    vi.mocked(submissionApi.getAllSubmission).mockResolvedValue({
+      questionSubmissionList: { submissions: [{ id: 1 }] },
+    } as any);
     const details = { id: 1, code: 'code' } as any;
-    (submissionApi.getSubmission as jest.Mock).mockResolvedValue({ submissionDetails: details });
+    vi.mocked(submissionApi.getSubmission).mockResolvedValue({ submissionDetails: details });
 
-    const handler = new LeetCodeHandler();
-    const result = await handler.getSubmission('two-sum');
-    expect(result).toEqual(details);
+    expect(await new LeetCodeHandler().getSubmission('two-sum')).toEqual(details);
+    expect(submissionApi.getSubmission).toHaveBeenCalledWith(1);
   });
 });
