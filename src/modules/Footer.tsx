@@ -7,7 +7,7 @@ export const Footer = () => {
         Having Issues?{' '}
         <Text
           as="a"
-          color="blue.500"
+          color="ctp.blue"
           href="https://github.com/kaustubh-dot/codesync/issues/new/choose"
           target="_blank"
           fontWeight={'semibold'}
@@ -17,7 +17,7 @@ export const Footer = () => {
         | Made with <span style={{ color: '#e25555' }}>&#9829;</span> by{' '}
         <Text
           as="a"
-          color="blue.500"
+          color="ctp.blue"
           href="https://github.com/kaustubh-dot"
           target="_blank"
           fontWeight={'semibold'}

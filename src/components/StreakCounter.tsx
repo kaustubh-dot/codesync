@@ -13,7 +13,7 @@ const StreakCounter = ({ problemsPerDay }: StreakCounterProps) => {
         const date = new Date(Date.now() - 86400000 * dayIdx);
         return (
           <VStack key={idx}>
-            <Heading size="md" color="gray.400" fontWeight={'semibold'}>
+            <Heading size="md" color="ctp.overlay2" fontWeight={'semibold'}>
               {DAYS_OF_WEEK[date.getDay()]}
             </Heading>
 

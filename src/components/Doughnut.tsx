@@ -18,10 +18,10 @@ const DoughnutComponent: React.FC<DoughnutProps> = ({ data }) => {
         transform={'translate(-50%,-50%)'}
         flexDir="column"
       >
-        <Text color="gray.400" fontWeight={'medium'}>
+        <Text color="ctp.overlay2" fontWeight={'medium'}>
           Total
         </Text>
-        <Heading size="xl" color="whiteAlpha.900" maxW={'15ch'}>
+        <Heading size="xl" color="ctp.text" maxW={'15ch'}>
           {data.datasets?.[0].data?.reduce((a, b) => a + b, 0)}
         </Heading>
       </Center>

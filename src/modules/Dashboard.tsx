@@ -57,7 +57,7 @@ const LinkedGithubComponents = () => {
           size="xs"
           variant="outline"
           colorScheme={'gray'}
-          color="gray.300"
+          color="ctp.subtext1"
           fontSize={'sm'}
         />{' '}
         on the top right corner
@@ -165,10 +165,10 @@ const Dashboard = () => {
       h="fit-content"
       paddingY={'25px'}
       border="1px solid"
-      borderColor="whiteAlpha.200"
+      borderColor="ctp.surface1"
       borderRadius={'lg'}
-      bg="gray.900"
-      boxShadow="dark-lg"
+      bg="ctp.base"
+      boxShadow="0 12px 30px rgba(35, 38, 52, 0.35)"
     >
       <HStack w="100%" justify="flex-end" mb={4}>
         <SettingsMenu />
@@ -194,7 +194,7 @@ const Dashboard = () => {
                 : 'Connect your Codeforces handle from Settings to enable Codeforces syncing.'}
             </Text>
             {codeforcesHandle && (
-              <Text fontSize="xs" color="gray.300" wordBreak="break-all">
+              <Text fontSize="xs" color="ctp.subtext1" wordBreak="break-all">
                 Destination:{' '}
                 {codeforcesRepoOwner && codeforcesRepo
                   ? `${codeforcesRepoOwner}/${codeforcesRepo}`
@@ -224,7 +224,7 @@ const Dashboard = () => {
                 src="logo-xiaohei-transparent.png"
                 alt="CodeSync mascot"
                 boxSize="64px"
-                filter="drop-shadow(0 0 2px rgba(255, 255, 255, 0.55))"
+                filter="drop-shadow(0 0 2px rgba(186, 187, 241, 0.7))"
               />
             </Tooltip>
           )}
@@ -245,7 +245,7 @@ const Dashboard = () => {
                 />
               </Tooltip>
             </HStack>
-            <Text color="gray.300" fontSize={'sm'}>
+            <Text color="ctp.subtext1" fontSize={'sm'}>
               {!solvedProblemsToday
                 ? 'Do one more, and keep up the streak!'
                 : generateTitle(streak)[1]}
@@ -289,7 +289,7 @@ const Dashboard = () => {
             >
               {Object.entries(solvedProblems).map(([key, value]) => (
                 <Box w="100%" key={key}>
-                  <Text color="gray.500" fontSize={'md'}>
+                  <Text color="ctp.subtext0" fontSize={'md'}>
                     {capitalize(key)}
                   </Text>
                   <Text fontSize={'2xl'} fontWeight={'bold'}>

@@ -70,15 +70,15 @@ const PopupPage: React.FC = () => {
       paddingTop="50px"
       paddingBottom="25px"
       border="1px solid"
-      borderColor="whiteAlpha.200"
+      borderColor="ctp.surface1"
       borderRadius="lg"
-      bg="gray.900"
-      boxShadow="dark-lg"
+      bg="ctp.base"
+      boxShadow="0 12px 30px rgba(35, 38, 52, 0.35)"
       pos="relative"
     >
       <VStack w="100%" h="100%" align="center" justify="center">
         {isLoading ? (
-          <CircularProgress color="green" isIndeterminate />
+          <CircularProgress color="ctp.green" isIndeterminate />
         ) : step === 0 ? (
           content
         ) : (

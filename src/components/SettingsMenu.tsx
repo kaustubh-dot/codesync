@@ -268,7 +268,7 @@ const SettingsMenu = () => {
             <Text fontSize={'sm'} fontWeight={'semibold'}>
               {githubUsername}
             </Text>
-            <Text fontSize={'xs'} color={'gray.500'}>
+            <Text fontSize={'xs'} color="ctp.subtext0">
               {githubRepo}
             </Text>
           </VStack>
@@ -377,11 +377,11 @@ const SettingsMenu = () => {
                 >
                   <VStack align="stretch" spacing={1}>
                     <Radio value="shared">Use linked repository</Radio>
-                    <Text fontSize="xs" color="gray.500" pl={6} pb={2}>
+                    <Text fontSize="xs" color="ctp.subtext0" pl={6} pb={2}>
                       Upload to {githubOwner}/{githubRepo}/Codeforces.
                     </Text>
                     <Radio value="separate">Use separate repository</Radio>
-                    <Text fontSize="xs" color="gray.500" pl={6}>
+                    <Text fontSize="xs" color="ctp.subtext0" pl={6}>
                       Upload Codeforces problem folders directly to another repository.
                     </Text>
                   </VStack>
@@ -562,8 +562,8 @@ const SettingsMenu = () => {
               <MenuItem
                 h="100%"
                 icon={<BiTrashAlt fontSize={'1.2rem'} />}
-                bgColor="red.900"
-                color="red.200"
+                bgColor="rgba(231, 130, 132, 0.16)"
+                color="ctp.red"
                 minH="40px"
                 onClick={() => setOpen('clear')}
                 closeOnSelect={false}
