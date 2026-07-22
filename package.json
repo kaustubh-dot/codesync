@@ -9,7 +9,7 @@
     "verify": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "@chakra-ui/react": "2.10.10",
+    "@chakra-ui/react": "3.36.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "chart.js": "4.5.1",
