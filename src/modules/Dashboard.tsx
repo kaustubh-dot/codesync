@@ -160,18 +160,18 @@ const Dashboard = () => {
 
   return (
     <Container
-      w="650px"
+      w="400px"
+      maxW="100vw"
       h="fit-content"
       paddingY={'25px'}
       border="1px solid"
       borderColor={'gray.200'}
       borderRadius={'lg'}
       boxShadow={'md'}
-      pos="relative"
     >
-      <Box pos="absolute" top="24px" right="16px">
+      <HStack w="100%" justify="flex-end" mb={4}>
         <SettingsMenu />
-      </Box>
+      </HStack>
       <VStack w="100%" h="100%" align="flex-start" justify={'flex-start'} spacing={8}>
         {(uploadError || repoVisibility === 'public' || codeforcesRepoVisibility === 'public') && (
           <Alert status={uploadError ? 'error' : 'info'} fontSize="sm" borderRadius="md">
