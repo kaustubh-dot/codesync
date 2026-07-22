@@ -1,15 +1,15 @@
 {
-  "name": "Personal LeetSync",
-  "description": "Privately sync accepted LeetCode submissions to one GitHub repository.",
-  "version": "1.0.0",
+  "name": "CodeSync",
+  "description": "Securely sync accepted LeetCode and Codeforces submissions to GitHub.",
+  "version": "2.0.0",
   "manifest_version": 3,
   "minimum_chrome_version": "102",
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; connect-src https://api.github.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; connect-src https://api.github.com https://codeforces.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
   },
   "action": {
     "default_popup": "index.html",
-    "default_title": "Personal LeetSync"
+    "default_title": "CodeSync"
   },
   "icons": {
     "16": "logo192.png",
@@ -19,7 +19,11 @@
     "512": "logo512.png"
   },
   "permissions": ["storage", "webRequest"],
-  "host_permissions": ["https://leetcode.com/*", "https://api.github.com/*"],
+  "host_permissions": [
+    "https://leetcode.com/*",
+    "https://codeforces.com/*",
+    "https://api.github.com/*"
+  ],
   "background": {
     "service_worker": "static/scripts/background.js"
   },
@@ -27,6 +31,11 @@
     {
       "matches": ["https://leetcode.com/problems/*"],
       "js": ["static/scripts/leetcode.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://codeforces.com/*"],
+      "js": ["static/scripts/codeforces.js"],
       "run_at": "document_idle"
     }
   ]

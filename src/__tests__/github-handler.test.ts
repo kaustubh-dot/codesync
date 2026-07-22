@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GithubHandler, { containsLikelyCredential } from '../handlers/GithubHandler';
 import type { QuestionDifficulty } from '../types/Question';
 import { Submission } from '../types/Submission';
+import type { CodeforcesSubmission } from '../types/CodeforcesSubmission';
 
 const stored: Record<string, unknown> = {};
 
@@ -175,5 +176,42 @@ describe('GithubHandler', () => {
     expect(await new GithubHandler().submit(submission)).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(stored.lastUploadError).toContain('credential');
+  });
+
+  it('uploads and deduplicates an accepted Codeforces submission', async () => {
+    Object.assign(stored, {
+      github_leetsync_token: 'token',
+      github_username: 'user',
+      github_repo_owner: 'owner',
+      github_leetsync_repo: 'solutions',
+      github_leetsync_subdirectory: 'accepted',
+    });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === 'PUT'
+        ? { ok: true, status: 201, json: async () => ({}) }
+        : { ok: false, status: 404, json: async () => ({}) },
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const submission: CodeforcesSubmission = {
+      id: 99,
+      contestId: 123,
+      creationTimeSeconds: 1,
+      verdict: 'OK',
+      programmingLanguage: 'GNU C++17',
+      code: 'int main() { return 0; }',
+      statement: '<div>Find the answer.</div>',
+      problemUrl: 'https://codeforces.com/contest/123/problem/A',
+      submissionUrl: 'https://codeforces.com/contest/123/submission/99',
+      problem: { index: 'A', name: 'Test Problem', rating: 800, tags: ['math'] },
+    };
+
+    const handler = new GithubHandler();
+    expect(await handler.submitCodeforces(submission)).toBe(true);
+    const putCalls = fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT');
+    expect(putCalls).toHaveLength(2);
+    expect(putCalls[0][0]).toContain('/contents/accepted/Codeforces/123A-test-problem/');
+    expect(stored.codeforces_synced_submissions).toHaveProperty('99');
+    expect(await handler.submitCodeforces(submission)).toBe(false);
+    expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(2);
   });
 });

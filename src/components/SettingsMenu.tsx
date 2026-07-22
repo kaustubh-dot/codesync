@@ -32,8 +32,9 @@ import {
 import React, { useEffect, useState } from 'react';
 import { BiCalendarHeart, BiTrashAlt, BiUnlink } from 'react-icons/bi';
 import { CiSettings } from 'react-icons/ci';
+import { SiCodeforces } from 'react-icons/si';
 import { TbSlashes } from 'react-icons/tb';
-import { GithubHandler } from '../handlers';
+import { CodeforcesHandler, GithubHandler } from '../handlers';
 import { CustomEditableComponent } from './Editable';
 
 interface SettingsMenuProps {}
@@ -41,11 +42,14 @@ interface SettingsMenuProps {}
 const SettingsMenu: React.FC<SettingsMenuProps> = () => {
   const [subdirectory, setSubdirectoryValue] = useState<string | null>(null);
 
-  const [isOpen, setOpen] = useState<'unlink' | 'clear' | 'subdirectory' | null>(null);
+  const [isOpen, setOpen] = useState<
+    'unlink' | 'clear' | 'subdirectory' | 'codeforces' | null
+  >(null);
   const [githubUsername, setGithubUsername] = React.useState('');
   const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
   const [newRepoURL, setNewRepoURL] = useState('');
+  const [codeforcesHandle, setCodeforcesHandle] = useState('');
   const [isConfigured, setIsConfigured] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,6 +100,28 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
     });
   };
 
+  const saveCodeforcesHandle = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const canonicalHandle = await CodeforcesHandler.validateHandle(codeforcesHandle);
+      if (!canonicalHandle) return setError('Codeforces could not find this handle.');
+      await chrome.storage.local.set({ codeforces_handle: canonicalHandle });
+      setCodeforcesHandle(canonicalHandle);
+      setOpen(null);
+    } catch {
+      setError('Could not verify the Codeforces handle. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeCodeforcesHandle = async () => {
+    await chrome.storage.local.remove('codeforces_handle');
+    setCodeforcesHandle('');
+    setOpen(null);
+  };
+
   const trimSubdirectory = (text: string) => {
     return text.replace(/^\/+|\/+$/g, '');
   };
@@ -130,6 +156,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
         'github_leetsync_repo',
         'github_leetsync_token',
         'github_leetsync_subdirectory',
+        'codeforces_handle',
       ],
       (result) => {
         const {
@@ -138,11 +165,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
           github_leetsync_repo,
           github_leetsync_token,
           github_leetsync_subdirectory,
+          codeforces_handle,
         } = result;
         setGithubUsername(typeof github_username === 'string' ? github_username : '');
         setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
         setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
         setIsConfigured(!!github_leetsync_token);
+        setCodeforcesHandle(typeof codeforces_handle === 'string' ? codeforces_handle : '');
         setSubdirectoryValue(
           typeof github_leetsync_subdirectory === 'string' ? github_leetsync_subdirectory : null,
         );
@@ -168,6 +197,67 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
         </HStack>
         <Divider />
         <MenuGroup title="General">
+          <Popover
+            isOpen={isOpen === 'codeforces'}
+            onClose={() => setOpen(null)}
+            closeOnBlur={false}
+          >
+            <PopoverTrigger>
+              <MenuItem
+                icon={<SiCodeforces fontSize={'1.2rem'} />}
+                minH="40px"
+                onClick={() => {
+                  setError('');
+                  setOpen('codeforces');
+                }}
+                closeOnSelect={false}
+              >
+                {codeforcesHandle ? `Codeforces: ${codeforcesHandle}` : 'Connect Codeforces'}
+              </MenuItem>
+            </PopoverTrigger>
+            <PopoverContent zIndex={1000000}>
+              <PopoverHeader fontWeight="semibold">Codeforces handle</PopoverHeader>
+              <PopoverArrow />
+              <PopoverCloseButton />
+              <PopoverBody>
+                <FormControl isInvalid={!!error}>
+                  <Input
+                    placeholder="tourist"
+                    value={codeforcesHandle}
+                    onChange={(event) => setCodeforcesHandle(event.target.value)}
+                    size="sm"
+                  />
+                  {!error ? (
+                    <FormHelperText fontSize="xs">
+                      Future accepted submissions will sync when Codeforces is open.
+                    </FormHelperText>
+                  ) : (
+                    <FormErrorMessage fontSize="xs">{error}</FormErrorMessage>
+                  )}
+                </FormControl>
+              </PopoverBody>
+              <PopoverFooter display="flex" justifyContent="space-between">
+                <Button
+                  variant="outline"
+                  colorScheme="red"
+                  size="sm"
+                  onClick={removeCodeforcesHandle}
+                  isDisabled={!codeforcesHandle || loading}
+                >
+                  Disconnect
+                </Button>
+                <Button
+                  colorScheme="green"
+                  size="sm"
+                  onClick={saveCodeforcesHandle}
+                  isLoading={loading}
+                  isDisabled={!codeforcesHandle.trim()}
+                >
+                  Save
+                </Button>
+              </PopoverFooter>
+            </PopoverContent>
+          </Popover>
           <Popover
             isOpen={isOpen === 'unlink'}
             onClose={() => setOpen(null)}

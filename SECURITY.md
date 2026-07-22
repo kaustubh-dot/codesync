@@ -1,6 +1,6 @@
 # Security policy
 
-This is a personal hardened fork that supports public or private solution repositories. Do not
+CodeSync supports public or private solution repositories. Do not
 publish GitHub tokens, extension storage exports, browser profiles, or built packages containing
 personal data in an issue or commit.
 
@@ -25,4 +25,4 @@ complete secret scanner; revoke any credential that is ever published.
 ## Reporting
 
 Revoke the affected token before investigating a suspected credential leak. Record only sanitized
-error messages; never include the token or LeetCode cookies.
+error messages; never include the token or coding-platform browser data.

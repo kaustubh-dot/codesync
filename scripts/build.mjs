@@ -11,6 +11,7 @@ await build({
     { in: 'src/index.tsx', out: 'main' },
     { in: 'src/background.ts', out: 'background' },
     { in: 'src/scripts/leetcode.ts', out: 'leetcode' },
+    { in: 'src/scripts/codeforces.ts', out: 'codeforces' },
   ],
   outdir: './build',
   entryNames: 'static/scripts/[name]',

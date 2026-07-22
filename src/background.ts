@@ -1,4 +1,5 @@
 import { GithubHandler } from './handlers';
+import type { CodeforcesSubmission } from './types/CodeforcesSubmission';
 import { Submission } from './types/Submission';
 
 chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
@@ -10,22 +11,43 @@ const showSuccessIcon = () => {
 };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (
-    request?.type !== 'submit-to-github' ||
-    sender.id !== chrome.runtime.id ||
-    !sender.url?.startsWith('https://leetcode.com/problems/')
-  ) {
+  const senderUrl = sender.url ?? '';
+  if (sender.id !== chrome.runtime.id) return;
+
+  if (request?.type === 'get-codeforces-handle' && senderUrl.startsWith('https://codeforces.com/')) {
+    chrome.storage.local
+      .get('codeforces_handle')
+      .then((result) =>
+        sendResponse({
+          handle: typeof result.codeforces_handle === 'string' ? result.codeforces_handle : '',
+        }),
+      );
+    return true;
+  }
+
+  if (request?.type === 'codeforces-sync-error' && senderUrl.startsWith('https://codeforces.com/')) {
+    chrome.storage.local.set({
+      lastUploadError: 'Codeforces sync could not read the latest submission. Sign in and retry.',
+    });
     return;
   }
 
-  new GithubHandler()
-    .submit(request.data as Submission)
+  const submission =
+    request?.type === 'submit-to-github' && senderUrl.startsWith('https://leetcode.com/problems/')
+      ? new GithubHandler().submit(request.data as Submission)
+      : request?.type === 'submit-codeforces-to-github' &&
+          senderUrl.startsWith('https://codeforces.com/')
+        ? new GithubHandler().submitCodeforces(request.data as CodeforcesSubmission)
+        : null;
+  if (!submission) return;
+
+  submission
     .then((isPushed) => {
       if (isPushed) showSuccessIcon();
       sendResponse({ status: isPushed ? 'OK' : 'IGNORED' });
     })
     .catch((error) => {
-      console.error('LeetSync upload failed:', error instanceof Error ? error.message : error);
+      console.error('CodeSync upload failed:', error instanceof Error ? error.message : error);
       sendResponse({ status: 'ERROR' });
     });
 
@@ -63,6 +85,24 @@ chrome.webRequest.onCompleted.addListener(
     urls: ['https://leetcode.com/problems/*/submit/'],
     types: ['xmlhttprequest'],
   },
+);
+
+chrome.webRequest.onCompleted.addListener(
+  (details: chrome.webRequest.OnCompletedDetails) => {
+    if (
+      details.method !== 'POST' ||
+      details.tabId < 0 ||
+      !details.url.startsWith('https://codeforces.com/') ||
+      !/\/submit(?:\/|$|\?)/.test(details.url)
+    ) {
+      return;
+    }
+
+    setTimeout(() => {
+      sendMessageToContentScript(details.tabId, 'get-codeforces-submission', null);
+    }, 5000);
+  },
+  { urls: ['https://codeforces.com/*'] },
 );
 
 export {};

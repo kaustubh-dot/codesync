@@ -44,7 +44,7 @@ const ConfigureGithubToken = ({ nextStep }: { nextStep: () => void }) => {
         <Heading size="md">Connect GitHub safely</Heading>
         <Text color="GrayText" fontSize="sm" w="95%" textAlign="center">
           Use a fine-grained personal access token limited to one repository with Contents set to
-          read and write. The token stays on this device and is never exposed to LeetCode pages.
+          read and write. The token stays on this device and is never exposed to coding-platform pages.
         </Text>
       </VStack>
       <FormControl isRequired isInvalid={!!error}>
@@ -147,7 +147,9 @@ const SelectRepositoryStep = ({ nextStep }: { nextStep: () => void }) => {
         {error ? (
           <FormErrorMessage fontSize="xs">{error}</FormErrorMessage>
         ) : (
-          <FormHelperText fontSize="xs">Accepted submissions will be committed here.</FormHelperText>
+            <FormHelperText fontSize="xs">
+              Accepted LeetCode and Codeforces submissions will be committed here.
+            </FormHelperText>
         )}
       </FormControl>
       <Button
@@ -168,10 +170,11 @@ const StartOnboarding = ({ nextStep }: { nextStep: () => void }) => (
   <VStack w="100%" h="100%" align="center" justify="center">
     <Logo />
     <VStack w="100%">
-      <Heading size="lg">Personal LeetSync</Heading>
+      <Heading size="lg">CodeSync</Heading>
       <Text color="GrayText" fontSize="sm" w="90%" textAlign="center">
-        Sync accepted LeetCode submissions to a public or private GitHub repository without sharing
-        browser sessions or broad account access. Public uploads are checked for likely credentials.
+        Sync accepted LeetCode and Codeforces submissions to a public or private GitHub repository
+        without sharing browser sessions or broad account access. Public uploads are checked for
+        likely credentials.
       </Text>
     </VStack>
     <VStack w="100%" py={4}>

@@ -82,6 +82,8 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
   const [githubRepo, setGithubRepo] = React.useState('');
   const [repoVisibility, setRepoVisibility] = React.useState('private');
   const [uploadError, setUploadError] = React.useState('');
+  const [codeforcesHandle, setCodeforcesHandle] = React.useState('');
+  const [codeforcesSolved, setCodeforcesSolved] = React.useState(0);
 
   const solvedProblemsToday = problemsPerDay?.[new Date().toLocaleDateString()] || 0;
 
@@ -93,6 +95,8 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
         'github_leetsync_repo',
         'github_repo_visibility',
         'lastUploadError',
+        'codeforces_handle',
+        'codeforces_synced_submissions',
       ],
       (result) => {
         const {
@@ -101,11 +105,19 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
           github_leetsync_repo,
           github_repo_visibility,
           lastUploadError,
+          codeforces_handle,
+          codeforces_synced_submissions,
         } = result;
         setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
         setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
         setRepoVisibility(github_repo_visibility === 'public' ? 'public' : 'private');
         setUploadError(typeof lastUploadError === 'string' ? lastUploadError : '');
+        setCodeforcesHandle(typeof codeforces_handle === 'string' ? codeforces_handle : '');
+        setCodeforcesSolved(
+          codeforces_synced_submissions && typeof codeforces_synced_submissions === 'object'
+            ? Object.keys(codeforces_synced_submissions).length
+            : 0,
+        );
         if (!problemsSolved) return;
         let [easy, medium, hard] = [0, 0, 0];
         const problemSolvedValues = Object.values(problemsSolved);
@@ -146,12 +158,18 @@ const Dashboard: React.FC<DashboardProps> = ({}) => {
         <SettingsMenu />
       </Box>
       <VStack w="100%" h="100%" align="flex-start" justify={'flex-start'} spacing={8}>
-        {repoVisibility === 'public' && (
+        {(uploadError || repoVisibility === 'public') && (
           <Alert status={uploadError ? 'error' : 'info'} fontSize="sm" borderRadius="md">
             <AlertIcon />
             {uploadError || 'Public repository linked. Credential checks are enabled.'}
           </Alert>
         )}
+        <Alert status={codeforcesHandle ? 'success' : 'info'} fontSize="sm" borderRadius="md">
+          <AlertIcon />
+          {codeforcesHandle
+            ? `Codeforces @${codeforcesHandle} enabled · ${codeforcesSolved} synced`
+            : 'Connect your Codeforces handle from Settings to enable Codeforces syncing.'}
+        </Alert>
         <HStack w="100%" align={'center'}>
           {solvedProblemsToday ? (
             <Box>

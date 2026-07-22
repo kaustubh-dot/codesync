@@ -1,5 +1,7 @@
 import { QuestionDifficulty } from '../types/Question';
 import { Submission } from '../types/Submission';
+import type { CodeforcesSubmission } from '../types/CodeforcesSubmission';
+import { getCodeforcesExtension } from './CodeforcesHandler';
 
 type GithubUser = {
   id: number;
@@ -184,6 +186,74 @@ export default class GithubHandler {
     if (!response.ok) throw new Error(`GitHub upload failed with status ${response.status}`);
   }
 
+  async submitCodeforces(submission: CodeforcesSubmission): Promise<boolean> {
+    if (!(await this.loadConfiguration()) || submission?.verdict !== 'OK') return false;
+
+    const synced = (await chrome.storage.local.get('codeforces_synced_submissions'))
+      .codeforces_synced_submissions;
+    const syncedSubmissions =
+      synced && typeof synced === 'object' ? (synced as Record<string, unknown>) : {};
+    if (syncedSubmissions[submission.id]) return false;
+
+    const { code, contestId, problem, programmingLanguage } = submission;
+    if (
+      !code ||
+      !Number.isInteger(contestId) ||
+      !/^[A-Za-z0-9]+$/.test(problem?.index ?? '') ||
+      !problem?.name
+    ) {
+      return false;
+    }
+    if (containsLikelyCredential(code)) {
+      await chrome.storage.local.set({
+        lastUploadError: 'Upload blocked because the Codeforces solution may contain a credential.',
+      });
+      return false;
+    }
+
+    const problemId = `${contestId}${problem.index}`;
+    const slug = problem.name
+      .normalize('NFKD')
+      .replace(/[^A-Za-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase() || 'problem';
+    const basePath = [this.subdirectory, 'Codeforces', `${problemId}-${slug}`]
+      .filter(Boolean)
+      .join('/');
+    const details = [
+      problem.rating ? `**Rating:** ${problem.rating}` : '',
+      problem.tags?.length ? `**Tags:** ${problem.tags.join(', ')}` : '',
+      `**Submission:** [${submission.id}](${submission.submissionUrl})`,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    const readme = `<h2><a href="${submission.problemUrl}">${problemId} - ${problem.name}</a></h2>\n\n${details}\n\n<hr>\n\n${
+      submission.statement || 'Open the linked Codeforces problem to view its statement.'
+    }`;
+
+    await this.upload(basePath, 'README.md', readme, `Add Codeforces README for ${problemId}`);
+    await this.upload(
+      basePath,
+      `${slug}${getCodeforcesExtension(programmingLanguage)}`,
+      code,
+      `Accepted Codeforces ${problemId} using ${programmingLanguage} - CodeSync`,
+    );
+
+    await chrome.storage.local.set({
+      lastUploadError: null,
+      codeforces_synced_submissions: {
+        ...syncedSubmissions,
+        [submission.id]: {
+          contestId,
+          index: problem.index,
+          name: problem.name,
+          timestamp: submission.creationTimeSeconds * 1000,
+        },
+      },
+    });
+    return true;
+  }
+
   getDifficultyColor(difficulty: QuestionDifficulty) {
     switch (difficulty) {
       case 'Easy':
@@ -238,7 +308,7 @@ export default class GithubHandler {
   ) {
     const message = `Time: ${stats.runtimeDisplay} (${stats.runtimePercentile.toFixed(
       2,
-    )}%) | Memory: ${stats.memoryDisplay} (${stats.memoryPercentile.toFixed(2)}%) - LeetSync`;
+    )}%) | Memory: ${stats.memoryDisplay} (${stats.memoryPercentile.toFixed(2)}%) - CodeSync`;
     await this.upload(path, `${problemName}${lang}`, code, message);
   }
 

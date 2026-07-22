@@ -1,44 +1,47 @@
-# Personal LeetSync
+# CodeSync
 
-A hardened Chrome extension that syncs accepted LeetCode submissions to one public or private GitHub
-repository. It preserves LeetSync's solution, README, notes, subdirectory, streak, statistics, and
-success-icon features while narrowing access to the minimum practical scope.
+A hardened Chrome extension that syncs accepted LeetCode and Codeforces submissions to one public
+or private GitHub repository.
 
-This project is based on [LeetSync](https://github.com/LeetSync/LeetSync) and retains its MIT
-license.
+CodeSync preserves the original LeetSync solution, README, notes, subdirectory, streak, statistics,
+and success-icon features. Codeforces support adds handle validation, accepted-submission detection,
+source and problem extraction, duplicate prevention, language-aware filenames, and a separate synced
+count.
+
+This project is based on [LeetSync](https://github.com/LeetSync/LeetSync). Codeforces behavior was
+informed by [CodeforcesSync](https://github.com/mhdnazrul/CodeforcesSync) and
+[cf-pusher](https://github.com/SarJ2004/cf-pusher). All three reference projects use the MIT
+license; CodeSync retains its existing MIT license.
 
 ## Security design
 
-- Uses a fine-grained GitHub personal access token restricted to one selected repository.
+- Uses a fine-grained GitHub token restricted to one selected repository.
 - Stores configuration in device-local extension storage, not Chrome Sync.
 - Restricts storage access to trusted extension pages and the background worker.
-- Performs authenticated GitHub requests only in the background worker. The LeetCode content
-  script never receives the token.
-- Uses the existing signed-in LeetCode page session without reading or copying its session cookie.
+- Performs authenticated GitHub requests only in the background worker. Coding-platform scripts
+  never receive the token.
+- Uses signed-in LeetCode and Codeforces pages without reading or copying browser cookies.
 - Has no OAuth client secret, callback script, analytics, remote code, or third-party server.
-- Requests only `storage` and `webRequest`, plus host access to LeetCode and the GitHub API.
+- Requests only `storage` and `webRequest`, plus host access to LeetCode, Codeforces, and GitHub's
+  API. It does not request cookie, browsing-history, or broad tab-control permissions.
 - Validates repository write access and rejects unsafe repository subdirectory paths.
-- Detects common credential formats in solution code and notes before uploading. A likely match is
-  blocked locally and shown in the extension popup.
+- Blocks common credential formats found in solution code or LeetCode notes before uploading.
 
 Chrome does not provide a general-purpose OS credential vault to extensions. The GitHub token is
-therefore stored locally in the Chrome profile so automatic syncing continues after a browser
-restart. Limit the token to one repository, give it an expiry date, and use a dedicated repository
-to contain the impact of browser-profile compromise.
+stored locally in the Chrome profile so syncing continues after a restart. Limit it to one
+repository, give it an expiry date, and revoke it if the browser profile or computer is compromised.
 
 ## Create the GitHub token
 
 1. Open [GitHub fine-grained token settings](https://github.com/settings/personal-access-tokens/new).
 2. Give the token a short expiry date.
-3. Under Repository access, choose **Only select repositories** and select the destination
-   repository.
-4. Under Repository permissions, set **Contents** to **Read and write**. Leave every other
-   permission at its default.
-5. Generate the token and paste it into Personal LeetSync. GitHub only shows the token once.
+3. Choose **Only select repositories** and select the destination repository.
+4. Set repository **Contents** permission to **Read and write**. Leave all other permissions at
+   their defaults.
+5. Generate the `github_pat_...` token and paste it into CodeSync.
 
-The extension validates both the token and write access before saving the selected repository.
-Public repositories use the same narrow token permissions as private repositories. Never use a
-broader GitHub CLI or classic personal access token.
+Public and private repositories use the same narrow permission. Do not use a classic token or the
+broader `gho_...` token used by GitHub CLI.
 
 ## Install locally
 
@@ -49,19 +52,41 @@ npm ci
 npm run verify
 ```
 
-Then:
+Then open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select this
+project's `build` directory.
 
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
-3. Choose **Load unpacked**.
-4. Select this project's `build` directory.
-5. Open the extension and complete the two setup steps.
+## Configure platforms
 
-Sign in to LeetCode normally. When an accepted submission finishes, the extension uploads:
+### LeetCode
 
-- `README.md` with the problem statement and difficulty badge
-- `Notes.md` when the submission contains notes
-- the solution file using the language's normal extension
+Sign in to LeetCode normally and reload open problem tabs after installing or updating CodeSync.
+An accepted submission uploads:
+
+- `README.md` with the problem statement and difficulty
+- `Notes.md` when notes exist
+- the solution using the language's normal extension
+
+Existing LeetCode paths and statistics remain unchanged.
+
+### Codeforces
+
+1. Open CodeSync's Settings menu.
+2. Choose **Connect Codeforces**.
+3. Enter your Codeforces handle and save it.
+4. Stay signed in to Codeforces and reload open Codeforces tabs.
+
+When a recent submission becomes accepted, CodeSync uses Codeforces' public API for metadata and the
+signed-in Codeforces page for your source. It uploads to:
+
+```text
+Codeforces/<contest-and-index>-<problem-name>/
+├── README.md
+└── <problem-name>.<language-extension>
+```
+
+If a custom repository subdirectory is configured, the `Codeforces` directory is created inside it.
+CodeSync does not backfill historical submissions. A Codeforces tab must be open when a new
+submission is accepted because the extension intentionally avoids broad tab-control permission.
 
 ## Verify changes
 
@@ -72,16 +97,16 @@ npm run build
 npm audit
 ```
 
-The security-contract tests fail if cookie access, Chrome Sync storage, broad GitHub page injection,
-or additional manifest permissions are reintroduced.
+Security-contract tests fail if cookie access, Chrome Sync storage, page exposure of the GitHub
+token, or additional manifest permissions are introduced.
 
 ## Revoke access
 
 Delete the token from [GitHub token settings](https://github.com/settings/personal-access-tokens),
-then choose **Reset All** in the extension. Removing the extension also deletes its local storage.
+then choose **Reset All** in CodeSync. Removing the extension also deletes its local storage.
 
 ## Maintenance
 
-Dependabot checks npm and GitHub Actions dependencies weekly. The verification workflow runs type
+Dependabot checks compatible npm and GitHub Actions updates weekly. GitHub Actions runs type
 checking, behavioral and security tests, a production build, and `npm audit` for every push and pull
 request.
