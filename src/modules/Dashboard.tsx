@@ -219,13 +219,12 @@ const Dashboard = () => {
               </Tooltip>
             </Box>
           ) : (
-            <Tooltip label="Xiaohei is ready to sync your first accepted solution.">
+            <Tooltip label="CodeSync is ready">
               <Image
-                src="logo96.png"
-                alt="Xiaohei syncing code"
+                src="logo-xiaohei-transparent.png"
+                alt="CodeSync mascot"
                 boxSize="64px"
-                borderRadius="xl"
-                bg="white"
+                filter="drop-shadow(0 0 2px rgba(255, 255, 255, 0.55))"
               />
             </Tooltip>
           )}
