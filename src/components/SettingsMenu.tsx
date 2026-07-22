@@ -326,7 +326,7 @@ const SettingsMenu = () => {
             closeOnBlur={false}
           >
             <PopoverTrigger>
-              <Tooltip label="You can now specify a subdirectory in you repo where your next submissions will be uploaded to.">
+              <Tooltip label="Choose where future submissions are uploaded in your repository.">
                 <MenuItem
                   h="100%"
                   icon={<TbSlashes fontSize={'1.2rem'} />}
@@ -341,7 +341,7 @@ const SettingsMenu = () => {
             <PopoverContent zIndex={10000} w="400px" paddingBottom={'1rem'}>
               <PopoverHeader fontWeight="semibold">Set Subdirectory</PopoverHeader>
               <Text fontSize="sm" padding="2">
-                if you set it to <Code fontSize="xs">/LinkedList/Easy</Code>, your next submissions
+                If you set it to <Code fontSize="xs">/LinkedList/Easy</Code>, your next submissions
                 will be uploaded there.
               </Text>
               <PopoverArrow />
@@ -362,7 +362,7 @@ const SettingsMenu = () => {
                   </InputGroup>
                   {!error ? (
                     <FormHelperText fontSize={'xs'}>
-                      You next submissions will be uploaded at{' '}
+                      Your next submissions will be uploaded to{' '}
                       <Code fontSize="xs">
                         {`${githubOwner}/${githubRepo}/${
                           (subdirectory && trimSubdirectory(subdirectory)) || ''
