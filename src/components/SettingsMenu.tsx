@@ -562,8 +562,8 @@ const SettingsMenu = () => {
               <MenuItem
                 h="100%"
                 icon={<BiTrashAlt fontSize={'1.2rem'} />}
-                bgColor={'red.50'}
-                color="red.500"
+                bgColor="red.900"
+                color="red.200"
                 minH="40px"
                 onClick={() => setOpen('clear')}
                 closeOnSelect={false}

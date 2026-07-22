@@ -165,9 +165,10 @@ const Dashboard = () => {
       h="fit-content"
       paddingY={'25px'}
       border="1px solid"
-      borderColor={'gray.200'}
+      borderColor="whiteAlpha.200"
       borderRadius={'lg'}
-      boxShadow={'md'}
+      bg="gray.900"
+      boxShadow="dark-lg"
     >
       <HStack w="100%" justify="flex-end" mb={4}>
         <SettingsMenu />
@@ -193,7 +194,7 @@ const Dashboard = () => {
                 : 'Connect your Codeforces handle from Settings to enable Codeforces syncing.'}
             </Text>
             {codeforcesHandle && (
-              <Text fontSize="xs" color="gray.600" wordBreak="break-all">
+              <Text fontSize="xs" color="gray.300" wordBreak="break-all">
                 Destination:{' '}
                 {codeforcesRepoOwner && codeforcesRepo
                   ? `${codeforcesRepoOwner}/${codeforcesRepo}`
@@ -218,8 +219,14 @@ const Dashboard = () => {
               </Tooltip>
             </Box>
           ) : (
-            <Tooltip label="Start your flame right now by solving your first problem today!">
-              <Heading size="3xl">&#128064;</Heading>
+            <Tooltip label="Xiaohei is ready to sync your first accepted solution.">
+              <Image
+                src="logo96.png"
+                alt="Xiaohei syncing code"
+                boxSize="64px"
+                borderRadius="xl"
+                bg="white"
+              />
             </Tooltip>
           )}
           <Box textAlign="left">
@@ -239,7 +246,7 @@ const Dashboard = () => {
                 />
               </Tooltip>
             </HStack>
-            <Text color="gray.600" fontSize={'sm'}>
+            <Text color="gray.300" fontSize={'sm'}>
               {!solvedProblemsToday
                 ? 'Do one more, and keep up the streak!'
                 : generateTitle(streak)[1]}

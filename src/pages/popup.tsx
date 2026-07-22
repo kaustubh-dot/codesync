@@ -70,9 +70,10 @@ const PopupPage: React.FC = () => {
       paddingTop="50px"
       paddingBottom="25px"
       border="1px solid"
-      borderColor="gray.200"
+      borderColor="whiteAlpha.200"
       borderRadius="lg"
-      boxShadow="md"
+      bg="gray.900"
+      boxShadow="dark-lg"
       pos="relative"
     >
       <VStack w="100%" h="100%" align="center" justify="center">
