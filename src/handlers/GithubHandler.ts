@@ -205,7 +205,19 @@ export default class GithubHandler {
       },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error(`GitHub upload failed with status ${response.status}`);
+    if (!response.ok) {
+      const message = await response
+        .json()
+        .then((body: { message?: unknown }) =>
+          typeof body.message === 'string' ? body.message : '',
+        )
+        .catch(() => '');
+      throw new Error(
+        message
+          ? `GitHub upload failed: ${message}`
+          : `GitHub upload failed with status ${response.status}`,
+      );
+    }
   }
 
   async submitCodeforces(submission: CodeforcesSubmission): Promise<boolean> {

@@ -34,6 +34,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return;
   }
 
+  if (request?.type === 'leetcode-sync-error' && senderUrl.startsWith('https://leetcode.com/')) {
+    chrome.storage.local.set({
+      lastUploadError: 'LeetCode sync could not read the accepted submission. Reload the tab and retry.',
+    });
+    return;
+  }
+
   let submission: Promise<boolean> | null = null;
   if (
     request?.type === 'submit-to-github' &&
@@ -57,6 +64,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     })
     .catch((error) => {
       console.error('CodeSync upload failed:', error instanceof Error ? error.message : error);
+      chrome.storage.local.set({
+        lastUploadError:
+          error instanceof Error ? error.message : 'CodeSync could not upload this submission.',
+      });
       sendResponse({ status: 'ERROR' });
     });
 
@@ -76,20 +87,21 @@ chrome.webRequest.onCompleted.addListener(
     if (
       details.method !== 'POST' ||
       !details.url.startsWith('https://leetcode.com/problems/') ||
-      !details.url.includes('/submit/')
+      !/\/submit\/?(?:\?|$)/.test(details.url)
     ) {
       return;
     }
 
-    const questionSlug = details.url.match(/\/problems\/(.*)\/submit/)?.[1] ?? null;
+    const questionSlug = details.url.match(/\/problems\/([^/]+)\/submit\/?(?:\?|$)/)?.[1] ?? null;
     if (!questionSlug || details.tabId < 0) return;
 
+    chrome.storage.local.set({ lastUploadError: null });
     setTimeout(() => {
       sendMessageToContentScript(details.tabId, 'get-submission', { questionSlug });
     }, 5000);
   },
   {
-    urls: ['https://leetcode.com/problems/*/submit/'],
+    urls: ['https://leetcode.com/problems/*'],
     types: ['xmlhttprequest'],
   },
 );

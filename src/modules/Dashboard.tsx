@@ -82,20 +82,20 @@ const Dashboard = () => {
   const solvedProblemsToday = problemsPerDay?.[getLocalDateKey(new Date())] || 0;
 
   React.useEffect(() => {
-    chrome.storage.local.get(
-      [
-        'problemsSolved',
-        'github_repo_owner',
-        'github_repo',
-        'github_repo_visibility',
-        'lastUploadError',
-        'codeforces_handle',
-        'codeforces_synced_submissions',
-        'github_codeforces_repo_owner',
-        'github_codeforces_repo',
-        'github_codeforces_repo_visibility',
-      ],
-      (result) => {
+    const keys = [
+      'problemsSolved',
+      'github_repo_owner',
+      'github_repo',
+      'github_repo_visibility',
+      'lastUploadError',
+      'codeforces_handle',
+      'codeforces_synced_submissions',
+      'github_codeforces_repo_owner',
+      'github_codeforces_repo',
+      'github_codeforces_repo_visibility',
+    ];
+    const loadDashboard = () => {
+      chrome.storage.local.get(keys, (result) => {
         setGithubOwner(typeof result.github_repo_owner === 'string' ? result.github_repo_owner : '');
         setGithubRepo(
           typeof result.github_repo === 'string' ? result.github_repo : '',
@@ -138,8 +138,15 @@ const Dashboard = () => {
         setSolvedProblems(totals);
         setProblemsPerDay(dailyProblems);
         setStreak(getTotalNumberOfStreaks(dailyProblems));
-      },
-    );
+      });
+    };
+    const handleStorageChange = (_changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local') loadDashboard();
+    };
+
+    loadDashboard();
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => chrome.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
   return (
