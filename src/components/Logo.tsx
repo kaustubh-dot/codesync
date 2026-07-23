@@ -10,11 +10,11 @@ const Logo: React.FC<LogoProps> = ({ logoProps }) => {
     <Image
       src="logo512.png"
       alt="CodeSync"
-      {...logoProps}
       maxW="110px"
-      borderRadius={'50%'}
-      boxShadow={'dark-lg'}
-      mb={'0.5rem'}
+      borderRadius="50%"
+      boxShadow="dark-lg"
+      mb="0.5rem"
+      {...logoProps}
     />
   );
 };

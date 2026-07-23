@@ -3,9 +3,12 @@
 CodeSync supports public or private solution repositories. Do not publish GitHub tokens, extension
 storage exports, browser profiles, or built packages containing personal data in an issue or commit.
 
-## Supported version
+## Supported versions
 
-Only the current `main` branch is maintained.
+| Version | Supported |
+| --- | --- |
+| 3.x | Yes |
+| 2.x and earlier | No |
 
 ## Credential handling
 
@@ -21,7 +24,16 @@ Before uploading, the extension blocks common GitHub, cloud, package-registry, p
 private-key credential formats found in solution code or notes. This is defense in depth, not a
 complete secret scanner; revoke any credential that is ever published.
 
-## Reporting
+## Reporting a vulnerability
 
-Revoke the affected token before investigating a suspected credential leak. Record only sanitized
-error messages; never include the token or coding-platform browser data.
+Use GitHub's
+[private vulnerability reporting](https://github.com/kaustubh-dot/codesync/security/advisories/new).
+Do not open a public issue for a suspected vulnerability.
+
+Include the affected version, impact, sanitized reproduction steps, and any suggested mitigation.
+Never include a token, private solution, storage export, cookie, or browser-profile data. You should
+receive an acknowledgement within seven days. The maintainer will coordinate remediation and public
+disclosure based on severity.
+
+Revoke the affected token before investigating a suspected credential leak. Removing a secret from
+Git history does not make that secret safe to reuse.

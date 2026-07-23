@@ -10,25 +10,19 @@ export const getSubmission = async (
     return client.request(GET_SUBMISSION_DETAILS, {
       submissionId,
     });
-  } catch (e) {
-    console.log(e);
+  } catch {
     return null;
   }
 };
 export const getAllSubmission = async (
   questionSlug: string,
-): Promise<{ submissionDetails: Submission } | null> => {
+): Promise<{ questionSubmissionList?: { submissions?: { id: string }[] } } | null> => {
   try {
     const client = getClient();
     return client.request(GET_SUBMISSIONS, {
       questionSlug,
-      limit: 20,
-      offset: 0,
-      lastKey: null,
-      status: 10,
     });
-  } catch (e) {
-    console.log(e);
+  } catch {
     return null;
   }
 };

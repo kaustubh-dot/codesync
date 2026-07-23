@@ -7,29 +7,32 @@ import {
 } from '../modules/CompleteAuthentication';
 import Dashboard from '../modules/Dashboard';
 import { OnboardingLayout } from '../modules/OnboardingLayout';
+import { migrateLegacyStorage } from '../lib/storage';
 
 type UserGlobalData = {
-  github_leetsync_token: string;
+  github_token: string;
   github_username: string;
   github_repo_owner: string;
-  github_leetsync_repo: string;
+  github_repo: string;
 };
 
 const hasCompletedRequirements = (data: Partial<UserGlobalData>) =>
   !!(
-    data.github_leetsync_token &&
+    data.github_token &&
     data.github_username &&
     data.github_repo_owner &&
-    data.github_leetsync_repo
+    data.github_repo
   );
 
-const getUserData = async (): Promise<Partial<UserGlobalData>> =>
-  chrome.storage.local.get([
-    'github_leetsync_token',
+const getUserData = async (): Promise<Partial<UserGlobalData>> => {
+  await migrateLegacyStorage();
+  return chrome.storage.local.get([
+    'github_token',
     'github_username',
     'github_repo_owner',
-    'github_leetsync_repo',
+    'github_repo',
   ]);
+};
 
 const steps = [StartOnboarding, ConfigureGithubToken, SelectRepositoryStep];
 
@@ -44,7 +47,7 @@ const PopupPage: React.FC = () => {
       const data = await getUserData();
       if (hasCompletedRequirements(data)) {
         setIsSynced(true);
-      } else if (data.github_leetsync_token && data.github_username) {
+      } else if (data.github_token && data.github_username) {
         setStep(2);
       }
     } catch {

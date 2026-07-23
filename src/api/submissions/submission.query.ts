@@ -1,88 +1,41 @@
 export const GET_SUBMISSION_DETAILS = `
-query submissionDetails($submissionId: Int!) {
-  submissionDetails(submissionId: $submissionId) {
-    runtime
-    runtimeDisplay
-    runtimePercentile
-    runtimeDistribution
-    memory
-    memoryDisplay
-    memoryPercentile
-    memoryDistribution
-    code
-    timestamp
-    statusCode
-    user {
-      username
-      profile {
-        realName
-        userAvatar
+  query SubmissionDetails($submissionId: Int!) {
+    submissionDetails(submissionId: $submissionId) {
+      code
+      timestamp
+      statusCode
+      runtimeDisplay
+      runtimePercentile
+      memoryDisplay
+      memoryPercentile
+      notes
+      lang {
+        verboseName
+      }
+      question {
+        questionId
+        questionFrontendId
+        title
+        titleSlug
+        difficulty
+        content
       }
     }
-    lang {
-      name
-      verboseName
-    }
-    question {
-      questionId
-      acRate
-      difficulty
-      freqBar
-      frontendQuestionId: questionFrontendId
-      isFavor
-      paidOnly: isPaidOnly
-      content
-      status
-      title
-      titleSlug
-      topicTags {
-        name
-        id
-        slug
-      }
-      hasSolution
-      hasVideoSolution
-    }
-    notes
-    topicTags {
-      tagId
-      slug
-      name
-    }
-    runtimeError
-    compileError
-    lastTestcase
   }
-}
 `;
 
-export const GET_SUBMISSIONS = `query submissionList($offset: Int!, $limit: Int!, $lastKey: String, $questionSlug: String!, $lang: Int, $status: Int) {
-  questionSubmissionList(
-  offset: $offset
-  limit: $limit
-  lastKey: $lastKey
-  questionSlug: $questionSlug
-  lang: $lang
-  status: $status
-  ) {
-    lastKey
-    hasNext
-    submissions {
-      id
-      title
-      titleSlug
-      status
-      statusDisplay
-      lang
-      langName
-      runtime
-      timestamp
-      url
-      isPending
-      memory
-      hasNotes
-      notes
+export const GET_SUBMISSIONS = `
+  query AcceptedSubmissions($questionSlug: String!) {
+    questionSubmissionList(
+      offset: 0
+      limit: 1
+      lastKey: null
+      questionSlug: $questionSlug
+      status: 10
+    ) {
+      submissions {
+        id
+      }
     }
-}
-}
+  }
 `;

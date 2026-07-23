@@ -1,13 +1,15 @@
 import { GithubHandler } from './handlers';
+import { migrateLegacyStorage } from './lib/storage';
 import type { CodeforcesSubmission } from './types/CodeforcesSubmission';
 import { Submission } from './types/Submission';
 
 chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+const storageReady = migrateLegacyStorage();
 
 const showSuccessIcon = () => {
-  chrome.action.setIcon({ path: 'icon-fire-96x96.gif' }, () => {
-    setTimeout(() => chrome.action.setIcon({ path: 'logo96.png' }), 5000);
-  });
+  chrome.action.setBadgeBackgroundColor({ color: '#40a02b' });
+  chrome.action.setBadgeText({ text: '✓' });
+  setTimeout(() => chrome.action.setBadgeText({ text: '' }), 5000);
 };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -32,13 +34,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return;
   }
 
-  const submission =
-    request?.type === 'submit-to-github' && senderUrl.startsWith('https://leetcode.com/problems/')
-      ? new GithubHandler().submit(request.data as Submission)
-      : request?.type === 'submit-codeforces-to-github' &&
-          senderUrl.startsWith('https://codeforces.com/')
-        ? new GithubHandler().submitCodeforces(request.data as CodeforcesSubmission)
-        : null;
+  let submission: Promise<boolean> | null = null;
+  if (
+    request?.type === 'submit-to-github' &&
+    senderUrl.startsWith('https://leetcode.com/problems/')
+  ) {
+    submission = storageReady.then(() => new GithubHandler().submit(request.data as Submission));
+  } else if (
+    request?.type === 'submit-codeforces-to-github' &&
+    senderUrl.startsWith('https://codeforces.com/')
+  ) {
+    submission = storageReady.then(() =>
+      new GithubHandler().submitCodeforces(request.data as CodeforcesSubmission),
+    );
+  }
   if (!submission) return;
 
   submission
@@ -55,12 +64,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 const sendMessageToContentScript = (tabId: number, type: string, data: unknown) => {
-  chrome.tabs.sendMessage(tabId, { type, data }, (response) => {
+  chrome.tabs.sendMessage(tabId, { type, data }, (_response) => {
     if (chrome.runtime.lastError) {
-      console.log(chrome.runtime.lastError.message);
       return;
     }
-    console.log('Submission request acknowledged', response);
   });
 };
 

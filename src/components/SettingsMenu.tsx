@@ -9,7 +9,6 @@ import {
   FormHelperText,
   HStack,
   Input,
-  InputGroup,
   Menu,
   MenuButton,
   MenuGroup,
@@ -35,7 +34,6 @@ import { CiSettings } from 'react-icons/ci';
 import { SiCodeforces } from 'react-icons/si';
 import { TbSlashes } from 'react-icons/tb';
 import { CodeforcesHandler, GithubHandler } from '../handlers';
-import { CustomEditableComponent } from './Editable';
 
 type CodeforcesRepositoryMode = 'shared' | 'separate';
 
@@ -78,7 +76,7 @@ const SettingsMenu = () => {
   };
 
   const unlinkRepo = async () => {
-    await chrome.storage.local.remove(['github_repo_owner', 'github_leetsync_repo']);
+    await chrome.storage.local.remove(['github_repo_owner', 'github_repo']);
     setGithubOwner('');
     setGithubRepo('');
     window.location.reload();
@@ -98,7 +96,7 @@ const SettingsMenu = () => {
 
       await chrome.storage.local.set({
         github_repo_owner: owner,
-        github_leetsync_repo: repoName,
+        github_repo: repoName,
       });
       setGithubOwner(owner);
       setGithubRepo(repoName);
@@ -193,7 +191,7 @@ const SettingsMenu = () => {
     //validate the subdirectory
     if (subdirectory === '' || subdirectory === null) {
       //this means the user wants to remove the subdirectory
-      await chrome.storage.local.remove('github_leetsync_subdirectory');
+      await chrome.storage.local.remove('github_subdirectory');
       setLoading(false);
       return;
     }
@@ -205,7 +203,7 @@ const SettingsMenu = () => {
     }
 
     await chrome.storage.local.set({
-      github_leetsync_subdirectory: trimSubdirectory(subdirectory),
+      github_subdirectory: trimSubdirectory(subdirectory),
     });
     setLoading(false);
   };
@@ -215,9 +213,9 @@ const SettingsMenu = () => {
       [
         'github_username',
         'github_repo_owner',
-        'github_leetsync_repo',
-        'github_leetsync_token',
-        'github_leetsync_subdirectory',
+        'github_repo',
+        'github_token',
+        'github_subdirectory',
         'codeforces_handle',
         'github_codeforces_repo_owner',
         'github_codeforces_repo',
@@ -226,17 +224,17 @@ const SettingsMenu = () => {
         const {
           github_username,
           github_repo_owner,
-          github_leetsync_repo,
-          github_leetsync_token,
-          github_leetsync_subdirectory,
+          github_repo,
+          github_token,
+          github_subdirectory,
           codeforces_handle,
           github_codeforces_repo_owner,
           github_codeforces_repo,
         } = result;
         setGithubUsername(typeof github_username === 'string' ? github_username : '');
         setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
-        setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
-        setIsConfigured(!!github_leetsync_token);
+        setGithubRepo(typeof github_repo === 'string' ? github_repo : '');
+        setIsConfigured(!!github_token);
         setCodeforcesHandle(typeof codeforces_handle === 'string' ? codeforces_handle : '');
         const separateOwner =
           typeof github_codeforces_repo_owner === 'string' ? github_codeforces_repo_owner : '';
@@ -249,7 +247,7 @@ const SettingsMenu = () => {
           separateOwner && separateRepo ? `https://github.com/${separateOwner}/${separateRepo}` : '',
         );
         setSubdirectoryValue(
-          typeof github_leetsync_subdirectory === 'string' ? github_leetsync_subdirectory : null,
+          typeof github_subdirectory === 'string' ? github_subdirectory : null,
         );
       },
     );
@@ -521,18 +519,13 @@ const SettingsMenu = () => {
               <PopoverCloseButton />
               <PopoverBody>
                 <FormControl isInvalid={!!error}>
-                  <InputGroup size="sm">
-                    <CustomEditableComponent
-                      value={subdirectory || ''}
-                      defaultValue={subdirectory || ''}
-                      onChange={(value) => setSubdirectoryValue(value)}
-                      onSubmit={saveSubdirectory}
-                      props={{
-                        isDisabled: loading,
-                        placeholder: 'No subdirectory set',
-                      }}
-                    />
-                  </InputGroup>
+                  <Input
+                    value={subdirectory || ''}
+                    onChange={(event) => setSubdirectoryValue(event.target.value)}
+                    isDisabled={loading}
+                    placeholder="No subdirectory set"
+                    size="sm"
+                  />
                   {!error ? (
                     <FormHelperText fontSize={'xs'}>
                       Your next submissions will be uploaded to{' '}
@@ -547,6 +540,16 @@ const SettingsMenu = () => {
                   )}
                 </FormControl>
               </PopoverBody>
+              <PopoverFooter display="flex" justifyContent="flex-end">
+                <Button
+                  colorScheme="green"
+                  size="sm"
+                  onClick={saveSubdirectory}
+                  isLoading={loading}
+                >
+                  Save
+                </Button>
+              </PopoverFooter>
             </PopoverContent>
           </Popover>
         </MenuGroup>

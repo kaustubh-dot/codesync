@@ -1,4 +1,7 @@
-import titles from './streak_levels_messages.json';
+export const getLocalDateKey = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate(),
+  ).padStart(2, '0')}`;
 
 export const getTotalNumberOfStreaks = (streak: { [date: string]: number }) => {
   const streakDates = Object.keys(streak)
@@ -26,16 +29,8 @@ export const formatProblemsPerDay = (
 ): { [date: string]: number } => {
   const problemsPerDay: { [date: string]: number } = {};
   problemsSolved.forEach((problem) => {
-    const date = new Date(problem.timestamp);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateKey(new Date(problem.timestamp));
     problemsPerDay[dateStr] = (problemsPerDay[dateStr] || 0) + 1;
   });
   return problemsPerDay;
 };
-
-export function generateTitle(dailyProblemsSolved: number): [string, string] {
-  if (dailyProblemsSolved == null || isNaN(dailyProblemsSolved)) dailyProblemsSolved = 0;
-  if (dailyProblemsSolved < 0) dailyProblemsSolved = 0;
-  const entry = titles.find((t) => t.level === dailyProblemsSolved) || titles[titles.length - 1];
-  return [entry.title, entry.message];
-}

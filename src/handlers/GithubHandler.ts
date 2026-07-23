@@ -62,6 +62,10 @@ const credentialPatterns = [
   /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/,
   /AIza[0-9A-Za-z_-]{35}/,
   /npm_[A-Za-z0-9]{30,}/,
+  /glpat-[A-Za-z0-9_-]{20,}/,
+  /SG\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/,
+  /(?:AC|SK)[a-f0-9]{32}/i,
+  /-----BEGIN PGP PRIVATE KEY BLOCK-----/,
 ];
 
 export const containsLikelyCredential = (content: string) =>
@@ -76,8 +80,8 @@ export default class GithubHandler {
   private usesSeparateCodeforcesRepository = false;
 
   async loadTokenFromStorage(): Promise<string> {
-    const result = await chrome.storage.local.get('github_leetsync_token');
-    return storedString(result.github_leetsync_token);
+    const result = await chrome.storage.local.get('github_token');
+    return storedString(result.github_token);
   }
 
   async validateAndStoreToken(token: string): Promise<GithubUser | null> {
@@ -97,7 +101,7 @@ export default class GithubHandler {
     if (!user.login) return null;
 
     await chrome.storage.local.set({
-      github_leetsync_token: trimmedToken,
+      github_token: trimmedToken,
       github_username: user.login,
     });
     return user;
@@ -136,15 +140,15 @@ export default class GithubHandler {
 
   private async loadConfiguration(platform: 'leetcode' | 'codeforces'): Promise<boolean> {
     const result = await chrome.storage.local.get([
-      'github_leetsync_token',
+      'github_token',
       'github_username',
       'github_repo_owner',
-      'github_leetsync_repo',
+      'github_repo',
       'github_codeforces_repo_owner',
       'github_codeforces_repo',
-      'github_leetsync_subdirectory',
+      'github_subdirectory',
     ]);
-    this.accessToken = storedString(result.github_leetsync_token);
+    this.accessToken = storedString(result.github_token);
     const codeforcesOwner = storedString(result.github_codeforces_repo_owner);
     const codeforcesRepo = storedString(result.github_codeforces_repo);
     this.usesSeparateCodeforcesRepository =
@@ -154,8 +158,8 @@ export default class GithubHandler {
       : storedString(result.github_repo_owner) || storedString(result.github_username);
     this.repo = this.usesSeparateCodeforcesRepository
       ? codeforcesRepo
-      : storedString(result.github_leetsync_repo);
-    this.subdirectory = storedString(result.github_leetsync_subdirectory);
+      : storedString(result.github_repo);
+    this.subdirectory = storedString(result.github_subdirectory);
     return !!(this.accessToken && this.repoOwner && this.repo);
   }
 

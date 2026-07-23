@@ -117,7 +117,7 @@ const SelectRepositoryStep = ({ nextStep }: { nextStep: () => void }) => {
       }
       await chrome.storage.local.set({
         github_repo_owner: owner,
-        github_leetsync_repo: repo,
+        github_repo: repo,
       });
       nextStep();
       window.location.reload();

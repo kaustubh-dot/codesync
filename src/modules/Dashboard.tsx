@@ -3,10 +3,10 @@ import {
   AlertIcon,
   Box,
   Container,
+  Divider,
   Heading,
   HStack,
   IconButton,
-  Image,
   Link,
   Text,
   Tooltip,
@@ -14,16 +14,16 @@ import {
 } from '@chakra-ui/react';
 import React, { useEffect } from 'react';
 import { BiLink } from 'react-icons/bi';
+import { BsLightningChargeFill } from 'react-icons/bs';
 import { CiSettings } from 'react-icons/ci';
 import DoughnutComponent from '../components/Doughnut';
 import SettingsMenu from '../components/SettingsMenu';
 import StreakCounter from '../components/StreakCounter';
 import {
   formatProblemsPerDay,
-  generateTitle,
+  getLocalDateKey,
   getTotalNumberOfStreaks,
 } from '../utils/streak.helper';
-import { capitalize } from '../utils/string-manipulation.helper';
 import { Footer } from './Footer';
 
 const LinkedGithubComponents = () => {
@@ -31,50 +31,44 @@ const LinkedGithubComponents = () => {
   const [githubRepo, setGithubRepo] = React.useState('');
 
   useEffect(() => {
-    chrome.storage.local.get(['github_repo_owner', 'github_leetsync_repo'], (result) => {
-      const { github_repo_owner, github_leetsync_repo } = result;
-      setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
-      setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
+    chrome.storage.local.get(['github_repo_owner', 'github_repo'], (result) => {
+      setGithubOwner(typeof result.github_repo_owner === 'string' ? result.github_repo_owner : '');
+      setGithubRepo(
+        typeof result.github_repo === 'string' ? result.github_repo : '',
+      );
     });
   }, []);
 
   return (
     <Box>
-      <Text fontSize={'xs'}>
+      <Text fontSize="xs">
         Linked with{' '}
         <Link
           href={`https://github.com/${githubOwner}/${githubRepo}`}
           target="_blank"
-          fontWeight={'semibold'}
-          fontFamily={'Mono, monospace, sans-serif'}
+          fontWeight="semibold"
+          fontFamily="mono"
         >
           {githubOwner}/{githubRepo}
         </Link>
-        , Unlink by clicking{' '}
+        . Use{' '}
         <IconButton
           aria-label="Settings"
           icon={<CiSettings />}
           size="xs"
           variant="outline"
-          colorScheme={'gray'}
           color="ctp.subtext1"
-          fontSize={'sm'}
         />{' '}
-        on the top right corner
+        to change it.
       </Text>
     </Box>
   );
 };
+
 const Dashboard = () => {
-  const [solvedProblems, setSolvedProblems] = React.useState({
-    easy: 0,
-    medium: 0,
-    hard: 0,
-  });
+  const [solvedProblems, setSolvedProblems] = React.useState({ easy: 0, medium: 0, hard: 0 });
   const [streak, setStreak] = React.useState(0);
-  const [problemsPerDay, setProblemsPerDay] = React.useState<{
-    [date: string]: number;
-  }>();
+  const [problemsPerDay, setProblemsPerDay] = React.useState<Record<string, number>>();
   const [githubOwner, setGithubOwner] = React.useState('');
   const [githubRepo, setGithubRepo] = React.useState('');
   const [repoVisibility, setRepoVisibility] = React.useState('private');
@@ -85,14 +79,14 @@ const Dashboard = () => {
   const [codeforcesRepoOwner, setCodeforcesRepoOwner] = React.useState('');
   const [codeforcesRepo, setCodeforcesRepo] = React.useState('');
 
-  const solvedProblemsToday = problemsPerDay?.[new Date().toLocaleDateString()] || 0;
+  const solvedProblemsToday = problemsPerDay?.[getLocalDateKey(new Date())] || 0;
 
   React.useEffect(() => {
     chrome.storage.local.get(
       [
         'problemsSolved',
         'github_repo_owner',
-        'github_leetsync_repo',
+        'github_repo',
         'github_repo_visibility',
         'lastUploadError',
         'codeforces_handle',
@@ -102,58 +96,48 @@ const Dashboard = () => {
         'github_codeforces_repo_visibility',
       ],
       (result) => {
-        const {
-          problemsSolved,
-          github_repo_owner,
-          github_leetsync_repo,
-          github_repo_visibility,
-          lastUploadError,
-          codeforces_handle,
-          codeforces_synced_submissions,
-          github_codeforces_repo_owner,
-          github_codeforces_repo,
-          github_codeforces_repo_visibility,
-        } = result;
-        setGithubOwner(typeof github_repo_owner === 'string' ? github_repo_owner : '');
-        setGithubRepo(typeof github_leetsync_repo === 'string' ? github_leetsync_repo : '');
-        setRepoVisibility(github_repo_visibility === 'public' ? 'public' : 'private');
-        setUploadError(typeof lastUploadError === 'string' ? lastUploadError : '');
-        setCodeforcesHandle(typeof codeforces_handle === 'string' ? codeforces_handle : '');
+        setGithubOwner(typeof result.github_repo_owner === 'string' ? result.github_repo_owner : '');
+        setGithubRepo(
+          typeof result.github_repo === 'string' ? result.github_repo : '',
+        );
+        setRepoVisibility(result.github_repo_visibility === 'public' ? 'public' : 'private');
+        setUploadError(typeof result.lastUploadError === 'string' ? result.lastUploadError : '');
+        setCodeforcesHandle(
+          typeof result.codeforces_handle === 'string' ? result.codeforces_handle : '',
+        );
         setCodeforcesRepoOwner(
-          typeof github_codeforces_repo_owner === 'string' ? github_codeforces_repo_owner : '',
+          typeof result.github_codeforces_repo_owner === 'string'
+            ? result.github_codeforces_repo_owner
+            : '',
         );
         setCodeforcesRepo(
-          typeof github_codeforces_repo === 'string' ? github_codeforces_repo : '',
+          typeof result.github_codeforces_repo === 'string'
+            ? result.github_codeforces_repo
+            : '',
         );
         setCodeforcesRepoVisibility(
-          github_codeforces_repo_visibility === 'public' ? 'public' : '',
+          result.github_codeforces_repo_visibility === 'public' ? 'public' : '',
         );
         setCodeforcesSolved(
-          codeforces_synced_submissions && typeof codeforces_synced_submissions === 'object'
-            ? Object.keys(codeforces_synced_submissions).length
+          result.codeforces_synced_submissions &&
+            typeof result.codeforces_synced_submissions === 'object'
+            ? Object.keys(result.codeforces_synced_submissions).length
             : 0,
         );
-        if (!problemsSolved) return;
-        let [easy, medium, hard] = [0, 0, 0];
-        const problemSolvedValues = Object.values(problemsSolved);
-        problemSolvedValues.forEach((problem: any) => {
-          if (problem.question.difficulty === 'Easy') {
-            easy++;
-          } else if (problem.question.difficulty === 'Medium') {
-            medium++;
-          } else if (problem.question.difficulty === 'Hard') {
-            hard++;
-          }
+        if (!result.problemsSolved) return;
+
+        const values = Object.values(result.problemsSolved) as {
+          question: { difficulty: 'Easy' | 'Medium' | 'Hard' };
+          timestamp: number;
+        }[];
+        const totals = { easy: 0, medium: 0, hard: 0 };
+        values.forEach(({ question }) => {
+          totals[question.difficulty.toLowerCase() as keyof typeof totals]++;
         });
-        setSolvedProblems({
-          easy,
-          medium,
-          hard,
-        });
-        const problemsPerDay = formatProblemsPerDay(problemSolvedValues);
-        const streaksCount = getTotalNumberOfStreaks(problemsPerDay);
-        setProblemsPerDay(problemsPerDay);
-        setStreak(streaksCount);
+        const dailyProblems = formatProblemsPerDay(values);
+        setSolvedProblems(totals);
+        setProblemsPerDay(dailyProblems);
+        setStreak(getTotalNumberOfStreaks(dailyProblems));
       },
     );
   }, []);
@@ -163,91 +147,141 @@ const Dashboard = () => {
       w="400px"
       maxW="100vw"
       h="fit-content"
-      paddingY={'25px'}
+      p={0}
       border="1px solid"
       borderColor="ctp.surface1"
-      borderRadius={'lg'}
+      borderRadius="lg"
       bg="ctp.base"
       boxShadow="0 12px 30px rgba(35, 38, 52, 0.35)"
+      overflow="hidden"
     >
-      <HStack w="100%" justify="flex-end" mb={4}>
+      <HStack
+        justify="space-between"
+        px={5}
+        py={3}
+        borderBottom="1px solid"
+        borderColor="ctp.surface0"
+        bg="ctp.mantle"
+      >
+        <HStack spacing={2}>
+          <Box w="8px" h="8px" borderRadius="full" bg="ctp.green" />
+          <Text fontSize="sm" fontWeight="bold">
+            CodeSync
+          </Text>
+          <Text fontSize="xs" color="ctp.overlay2">
+            Activity
+          </Text>
+        </HStack>
         <SettingsMenu />
       </HStack>
-      <VStack w="100%" h="100%" align="flex-start" justify={'flex-start'} spacing={8}>
+
+      <VStack align="stretch" spacing={4} p={5}>
         {(uploadError || repoVisibility === 'public' || codeforcesRepoVisibility === 'public') && (
-          <Alert status={uploadError ? 'error' : 'info'} fontSize="sm" borderRadius="md">
-            <AlertIcon />
+          <Alert status={uploadError ? 'error' : 'info'} fontSize="xs" borderRadius="md">
+            <AlertIcon boxSize={4} />
             {uploadError || 'A destination repository is public. Credential checks are enabled.'}
           </Alert>
         )}
-        <Alert
-          status={codeforcesHandle ? 'success' : 'info'}
-          fontSize="sm"
+
+        <Box
+          position="relative"
+          overflow="hidden"
+          border="1px solid"
+          borderColor="ctp.surface1"
           borderRadius="md"
-          alignItems="flex-start"
+          bg="ctp.mantle"
+          p={4}
         >
-          <AlertIcon mt="2px" />
-          <Box minW={0}>
-            <Text>
-              {codeforcesHandle
-                ? `Codeforces @${codeforcesHandle} enabled · ${codeforcesSolved} synced`
-                : 'Connect your Codeforces handle from Settings to enable Codeforces syncing.'}
-            </Text>
-            {codeforcesHandle && (
-              <Text fontSize="xs" color="ctp.subtext1" wordBreak="break-all">
-                Destination:{' '}
-                {codeforcesRepoOwner && codeforcesRepo
-                  ? `${codeforcesRepoOwner}/${codeforcesRepo}`
-                  : `${githubOwner}/${githubRepo}/Codeforces`}
-              </Text>
-            )}
-          </Box>
-        </Alert>
-        <HStack w="100%" align={'center'}>
-          {solvedProblemsToday ? (
+          <Box
+            position="absolute"
+            top="-32px"
+            right="-20px"
+            w="110px"
+            h="110px"
+            borderRadius="full"
+            bg="rgba(140, 170, 238, 0.08)"
+          />
+          <HStack align="flex-start" justify="space-between" position="relative">
             <Box>
-              <Tooltip label="Solve more problems to increase your flame!">
-                <Image
-                  src="icon-fire-96x96.gif"
-                  alt="flame"
-                  height={`clamp(20px, ${
-                    20 + solvedProblemsToday * 20
-                  }px, 130px)`}
-                  width="fit-content"
-                  objectFit={'contain'}
-                />
-              </Tooltip>
+              <Text fontSize="xs" color="ctp.overlay2" fontWeight="semibold">
+                CURRENT RUN
+              </Text>
+              <HStack align="baseline" spacing={2} mt={1}>
+                <Heading fontSize="42px" lineHeight="1" letterSpacing="-0.06em">
+                  {streak}
+                </Heading>
+                <Text color="ctp.subtext1" fontWeight="semibold">
+                  {streak === 1 ? 'day' : 'days'}
+                </Text>
+              </HStack>
+              <Text color="ctp.subtext0" fontSize="sm" mt={2}>
+                {solvedProblemsToday
+                  ? `${solvedProblemsToday} solved today — activity recorded.`
+                  : 'No activity yet today. Your next accepted solution counts.'}
+              </Text>
             </Box>
-          ) : null}
-          <Box textAlign="left" flex="1" minW={0}>
-            <HStack spacing={0} align="center">
-              <Heading size="lg" fontWeight={'black'}>
-                {streak > 0 ? `${streak} day streak!` : 'Start your streak!'}
-              </Heading>
-              <Tooltip label={<LinkedGithubComponents />}>
-                <IconButton
-                  variant={'link'}
-                  aria-label="link"
-                  icon={<BiLink />}
-                  size="lg"
-                  onClick={() => {
-                    window.open(`https://github.com/${githubOwner}/${githubRepo}`, '_blank');
-                  }}
-                />
-              </Tooltip>
-            </HStack>
-            <Text color="ctp.subtext1" fontSize={'sm'}>
-              {!solvedProblemsToday
-                ? 'Do one more, and keep up the streak!'
-                : generateTitle(streak)[1]}
+            <Box
+              display="grid"
+              placeItems="center"
+              w="42px"
+              h="42px"
+              borderRadius="md"
+              bg={solvedProblemsToday ? 'rgba(166, 209, 137, 0.16)' : 'ctp.surface0'}
+              color={solvedProblemsToday ? 'ctp.green' : 'ctp.overlay2'}
+            >
+              <BsLightningChargeFill size="20px" aria-hidden />
+            </Box>
+          </HStack>
+          <HStack mt={4} pt={3} borderTop="1px solid" borderColor="ctp.surface0" minW={0}>
+            <Text fontSize="xs" color="ctp.subtext0" flexShrink={0}>
+              Syncing to
             </Text>
-          </Box>
-        </HStack>
-        <HStack w="100%" align="center" justify={'center'}>
+            <Tooltip label={<LinkedGithubComponents />}>
+              <IconButton
+                variant="ghost"
+                aria-label={`Open ${githubOwner}/${githubRepo} on GitHub`}
+                icon={<BiLink />}
+                size="xs"
+                color="ctp.blue"
+                onClick={() =>
+                  window.open(
+                    `https://github.com/${githubOwner}/${githubRepo}`,
+                    '_blank',
+                    'noopener',
+                  )
+                }
+              />
+            </Tooltip>
+            <Text fontSize="xs" fontWeight="semibold" noOfLines={1}>
+              {githubOwner}/{githubRepo}
+            </Text>
+          </HStack>
+        </Box>
+
+        <Box>
+          <HStack justify="space-between" mb={2}>
+            <Text fontSize="sm" fontWeight="bold">
+              Last 7 days
+            </Text>
+            <Text fontSize="xs" color="ctp.overlay2">
+              Number = solved
+            </Text>
+          </HStack>
           <StreakCounter problemsPerDay={problemsPerDay} />
-        </HStack>
-        <VStack w="100%" align="flex-start" spacing={4}>
-          <HStack h="fit-content" w="100%" align="center" justify="space-around">
+        </Box>
+
+        <Divider borderColor="ctp.surface0" />
+
+        <Box>
+          <HStack justify="space-between" mb={1}>
+            <Text fontSize="sm" fontWeight="bold">
+              Problem mix
+            </Text>
+            <Text fontSize="xs" color="ctp.overlay2">
+              LeetCode totals
+            </Text>
+          </HStack>
+          <HStack justify="space-between">
             <DoughnutComponent
               data={{
                 labels: ['Easy', 'Medium', 'Hard'],
@@ -255,47 +289,69 @@ const Dashboard = () => {
                   {
                     borderWidth: 1,
                     backgroundColor: [
-                      'rgba(75, 192, 192, 0.2)',
-                      'rgba(255, 206, 86, 0.2)',
-                      'rgba(255, 99, 132, 0.2)',
+                      'rgba(166, 209, 137, 0.18)',
+                      'rgba(239, 158, 118, 0.18)',
+                      'rgba(231, 130, 132, 0.18)',
                     ],
-                    borderColor: [
-                      'rgba(75, 192, 192, 1)',
-                      'rgba(255, 159, 64, 1)',
-                      'rgba(255, 99, 132, 1)',
-                    ],
+                    borderColor: ['#a6d189', '#ef9f76', '#e78284'],
                     label: 'Solved Problems',
                     data: [solvedProblems.easy, solvedProblems.medium, solvedProblems.hard],
                   },
                 ],
               }}
             />
-
-            <VStack
-              w="fit-content"
-              align="flex-start"
-              justify={'space-evenly'}
-              textAlign={'left'}
-              gap={2}
-            >
+            <VStack w="118px" align="stretch" spacing={2}>
               {Object.entries(solvedProblems).map(([key, value]) => (
-                <Box w="100%" key={key}>
-                  <Text color="ctp.subtext0" fontSize={'md'}>
-                    {capitalize(key)}
+                <HStack
+                  key={key}
+                  justify="space-between"
+                  px={3}
+                  py={2}
+                  borderRadius="sm"
+                  bg="ctp.mantle"
+                >
+                  <Text color="ctp.subtext0" fontSize="xs">
+                    {key[0].toUpperCase() + key.slice(1)}
                   </Text>
-                  <Text fontSize={'2xl'} fontWeight={'bold'}>
+                  <Text fontSize="sm" fontWeight="bold">
                     {value}
                   </Text>
-                </Box>
+                </HStack>
               ))}
             </VStack>
           </HStack>
-        </VStack>
-        <HStack w="100%" align={'center'} justify="center">
+        </Box>
+
+        <Alert
+          status={codeforcesHandle ? 'success' : 'info'}
+          fontSize="xs"
+          borderRadius="md"
+          alignItems="flex-start"
+          variant="left-accent"
+        >
+          <AlertIcon mt="1px" boxSize={4} />
+          <Box minW={0}>
+            <Text>
+              {codeforcesHandle
+                ? `Codeforces @${codeforcesHandle} · ${codeforcesSolved} synced`
+                : 'Connect Codeforces from Settings to sync accepted submissions.'}
+            </Text>
+            {codeforcesHandle && (
+              <Text color="ctp.subtext1" wordBreak="break-all" mt={0.5}>
+                {codeforcesRepoOwner && codeforcesRepo
+                  ? `${codeforcesRepoOwner}/${codeforcesRepo}`
+                  : `${githubOwner}/${githubRepo}/Codeforces`}
+              </Text>
+            )}
+          </Box>
+        </Alert>
+
+        <HStack justify="center" pt={1}>
           <Footer />
         </HStack>
       </VStack>
     </Container>
   );
 };
+
 export default Dashboard;

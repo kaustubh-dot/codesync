@@ -1,7 +1,7 @@
 import {
   getTotalNumberOfStreaks,
   formatProblemsPerDay,
-  generateTitle,
+  getLocalDateKey,
 } from '../utils/streak.helper';
 
 describe('Streak Helper Functions', () => {
@@ -64,6 +64,14 @@ describe('Streak Helper Functions', () => {
   });
 
   describe('formatProblemsPerDay', () => {
+    it('groups submissions by the local calendar day used by the streak UI', () => {
+      const timestamp = new Date(2024, 0, 15, 23, 30).getTime();
+
+      expect(formatProblemsPerDay([{ timestamp }])).toEqual({
+        [getLocalDateKey(new Date(timestamp))]: 1,
+      });
+    });
+
     it('should format problems correctly for a single day', () => {
       const problems = [
         { timestamp: new Date('2024-01-15T10:00:00Z').getTime() },
@@ -94,72 +102,18 @@ describe('Streak Helper Functions', () => {
     it('should ignore negative timestamps', () => {
       const problems = [{ timestamp: -1 }];
       const result = formatProblemsPerDay(problems);
-      // Negative timestamp is 1969-12-31 in UTC
-      expect(result['1969-12-31']).toBe(1);
+      expect(result[getLocalDateKey(new Date(-1))]).toBe(1);
     });
     it('should handle far future dates', () => {
-      const problems = [{ timestamp: new Date('2099-12-31T23:59:59Z').getTime() }];
+      const timestamp = new Date('2099-12-31T23:59:59Z').getTime();
+      const problems = [{ timestamp }];
       const result = formatProblemsPerDay(problems);
-      expect(result['2099-12-31']).toBe(1);
+      expect(result[getLocalDateKey(new Date(timestamp))]).toBe(1);
     });
     it('should handle non-integer timestamps', () => {
       const problems = [{ timestamp: 1705291200000.9 }];
       const result = formatProblemsPerDay(problems);
       expect(result['2024-01-15']).toBe(1);
-    });
-  });
-
-  describe('generateTitle', () => {
-    it('should return correct title and message for each level', () => {
-      const testCases = [
-        { input: 0, expectedTitle: 'Beginner' },
-        { input: 1, expectedTitle: 'Novice' },
-        { input: 2, expectedTitle: 'Rookie' },
-        { input: 3, expectedTitle: 'Intermediate' },
-        { input: 4, expectedTitle: 'Skilled' },
-        { input: 5, expectedTitle: 'Proficient' },
-        { input: 6, expectedTitle: 'Expert' },
-        { input: 7, expectedTitle: 'Master' },
-        { input: 10, expectedTitle: 'Mythic' },
-      ];
-      testCases.forEach(({ input, expectedTitle }) => {
-        const [title, message] = generateTitle(input);
-        expect(title).toBe(expectedTitle);
-        expect(typeof message).toBe('string');
-        expect(message.length).toBeGreaterThan(0);
-      });
-    });
-    it('should handle negative input', () => {
-      const [title, message] = generateTitle(-1);
-      expect(title).toBe('Beginner');
-      expect(typeof message).toBe('string');
-      expect(message.length).toBeGreaterThan(0);
-    });
-    it('should handle very large input', () => {
-      const [title, message] = generateTitle(1000);
-      expect(title).toBe('Cosmic');
-      expect(typeof message).toBe('string');
-      expect(message.length).toBeGreaterThan(0);
-    });
-    it('should handle undefined/null/NaN', () => {
-      // @ts-expect-error
-      const [title1] = generateTitle(undefined);
-      // @ts-expect-error
-      const [title2] = generateTitle(null);
-      const [title3] = generateTitle(NaN);
-      expect(title1).toBe('Beginner');
-      expect(title2).toBe('Beginner');
-      expect(title3).toBe('Beginner');
-    });
-    it('should handle boundary values', () => {
-      const [title0] = generateTitle(0);
-      const [title1] = generateTitle(1);
-      const [title6] = generateTitle(6);
-      const [title7] = generateTitle(7);
-      expect(title0).toBe('Beginner');
-      expect(title1).toBe('Novice');
-      expect(title6).toBe('Expert');
-      expect(title7).toBe('Master');
     });
   });
 });

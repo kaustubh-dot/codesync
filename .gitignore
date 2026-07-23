@@ -1,5 +1,11 @@
 node_modules/
 .DS_Store
 build/
-.env
+.env*
+!.env.example
 .vscode/
+coverage/
+*.crx
+*.pem
+*.key
+*storage-export*.json

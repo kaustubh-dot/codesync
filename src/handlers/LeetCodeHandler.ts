@@ -3,10 +3,9 @@ import { Submission } from '../types/Submission';
 
 class LeetCodeHandler {
   async getSubmission(questionSlug: string): Promise<Submission | null> {
-    const submissions = (await getAllSubmission(questionSlug)) as any;
+    const submissions = await getAllSubmission(questionSlug);
 
     if (!submissions?.questionSubmissionList?.submissions?.[0]?.id) {
-      console.log('No question submissions were found for this problem');
       return null;
     }
 

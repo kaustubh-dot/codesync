@@ -4,6 +4,8 @@ import { build } from 'esbuild';
 await rm('build', { recursive: true, force: true });
 await mkdir('build', { recursive: true });
 await cp('public', 'build', { recursive: true });
+await cp('LICENSE', 'build/LICENSE');
+await cp('THIRD_PARTY_NOTICES.md', 'build/THIRD_PARTY_NOTICES.md');
 
 await build({
   absWorkingDir: process.cwd(),
@@ -22,7 +24,7 @@ await build({
   platform: 'browser',
   target: 'chrome102',
   minify: true,
-  legalComments: 'none',
+  legalComments: 'external',
   loader: {
     '.css': 'css',
   },

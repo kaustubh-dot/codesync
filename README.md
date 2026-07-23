@@ -5,12 +5,12 @@
 <h1 align="center">CodeSync</h1>
 
 <p align="center">
-  A personal Chrome extension that sends accepted LeetCode and Codeforces submissions to one or two GitHub repositories.
+  An open-source Chrome extension that securely sends accepted LeetCode and Codeforces submissions to GitHub.
 </p>
 
-CodeSync is a private, self-built extension. It is not published in the Chrome Web Store and it does
-not use a hosted backend. You build it from this repository, load the resulting `build` directory in
-Chrome, and connect it to GitHub repositories with a narrowly scoped fine-grained token.
+CodeSync is an open-source, locally built extension. It is not published in the Chrome Web Store and
+does not use a hosted backend. Build it from this repository, load the resulting `build` directory
+in Chrome, and connect it to GitHub with a narrowly scoped fine-grained token.
 
 Each destination repository may be public or private. A public repository exposes your solutions,
 notes, commit history, and problem-solving activity. It does not expose the GitHub token unless you
@@ -34,12 +34,14 @@ that check is a safety net rather than a substitute for reviewing public content
 - [Troubleshooting](#troubleshooting)
 - [Removing CodeSync](#removing-codesync)
 - [Development and verification](#development-and-verification)
+- [Contributing and security](#contributing-and-security)
 - [Project history](#project-history)
+- [License](#license)
 
 ## What CodeSync does
 
-CodeSync keeps the original LeetSync behavior for LeetCode and adds Codeforces support without
-giving coding-platform pages access to the GitHub token.
+CodeSync supports LeetCode and Codeforces without giving coding-platform content scripts access to
+the GitHub token.
 
 | Capability | LeetCode | Codeforces |
 | --- | --- | --- |
@@ -53,17 +55,15 @@ giving coding-platform pages access to the GitHub token.
 | Choose a separate repository | Primary repository | Optional |
 | Historical backfill | No | No |
 
-After a successful upload, the toolbar icon changes to a flame for five seconds. The extension then
-restores the CodeSync logo.
+After a successful upload, the toolbar icon shows a green check badge for five seconds.
 
 ## How it works
 
 ```text
-LeetCode problem tab ─> trusted background worker ─> GitHub Contents API ─> primary repository
-                               │
-Codeforces tab ─────────────────┘──────────────────────────────────────────> primary or separate repository
-                               │
-                               └─ fine-grained token in local extension storage
+LeetCode tab  ----\
+                   > trusted background worker -> GitHub Contents API -> repository
+Codeforces tab ----/              |
+                                  `-> fine-grained token in local extension storage
 ```
 
 The content scripts read submission data from the signed-in LeetCode or Codeforces page. They send
@@ -82,7 +82,7 @@ You need:
 - Git.
 - Node.js 20 or newer. GitHub Actions currently verifies the project with Node.js 24.
 - npm, which is included with Node.js.
-- Access to the private `kaustubh-dot/codesync` repository.
+- Git, npm, and access to this public repository.
 - One GitHub repository for all solutions, or separate LeetCode and Codeforces repositories.
 
 Check the local tools before continuing:
@@ -97,12 +97,11 @@ If `node --version` reports a version below 20, install a current Node.js releas
 
 ## Installation
 
-### 1. Clone the private repository
+### 1. Clone the repository
 
 Using GitHub CLI:
 
 ```powershell
-gh auth status
 gh repo clone kaustubh-dot/codesync
 Set-Location codesync
 ```
@@ -113,9 +112,6 @@ Using Git over HTTPS:
 git clone https://github.com/kaustubh-dot/codesync.git
 Set-Location codesync
 ```
-
-GitHub may ask you to sign in because the source repository is private. Do not place a GitHub token
-directly in the clone URL.
 
 You can also download the repository from GitHub with **Code > Download ZIP**. Extract the archive
 to a permanent folder before building it. Chrome remembers the path used for an unpacked extension,
@@ -305,7 +301,7 @@ This small step prevents most first-run sync failures.
 4. Write and submit the solution from that problem page.
 5. Wait for LeetCode to mark the submission **Accepted**.
 6. Allow several seconds for CodeSync to read the accepted submission and commit its files.
-7. Look for the five-second flame icon, then check the destination repository's default branch.
+7. Look for the five-second green check badge, then check the destination repository's default branch.
 
 CodeSync reacts to LeetCode's submission request, waits five seconds, and checks the latest accepted
 submission for that problem. It ignores submissions older than one minute. This prevents an old
@@ -350,7 +346,7 @@ canonical capitalization.
 4. Wait for the verdict to become **Accepted**.
 5. Keep the page open while judging completes.
 6. Allow up to about 35 seconds for polling and upload.
-7. Look for the five-second flame icon, then check the repository.
+7. Look for the five-second green check badge, then check the repository.
 
 After a Codeforces submit request, CodeSync waits five seconds and polls the handle's latest
 submission while its verdict is `TESTING`. It checks up to 15 times with a two-second delay. The
@@ -632,7 +628,7 @@ organization owns it, confirm that you have write access.
 CodeSync does not search backward through submission history. If a newer submission replaced the
 accepted submission as the latest result, submit the intended solution again.
 
-### The flame appears but files are not where expected
+### The success badge appears but files are not where expected
 
 Check the configured subdirectory and the repository's default branch. Codeforces always adds a
 `Codeforces` segment in linked mode. Separate mode writes directly below the configured subdirectory
@@ -662,7 +658,7 @@ Use this order if you no longer need the extension:
 6. Delete the local cloned repository if you do not need the source.
 
 Removing CodeSync does not delete the destination repositories or any uploaded solutions. Deleting
-the local source folder is recoverable by cloning this private repository again. Revoking the token
+the local source folder is recoverable by cloning this repository again. Revoking the token
 cannot be undone, but you can create a replacement later.
 
 ## Development and verification
@@ -704,9 +700,29 @@ After changing source code:
 GitHub Actions repeats `npm ci`, `npm run verify`, and `npm audit` for every push and pull request.
 Dependabot checks compatible npm and GitHub Actions updates each week.
 
+## Contributing and security
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md) before opening a pull request.
+
+Do not report vulnerabilities in public issues. Follow [SECURITY.md](SECURITY.md) and use GitHub's
+private vulnerability-reporting flow. The project runs dependency audits in CI, reviews dependency
+changes on public pull requests, and runs CodeQL on the public `main` branch.
+
 ## Project history
 
-CodeSync is based on [LeetSync](https://github.com/LeetSync/LeetSync). Its Codeforces behavior was
-informed by [CodeforcesSync](https://github.com/mhdnazrul/CodeforcesSync) and
-[cf-pusher](https://github.com/SarJ2004/cf-pusher). The links are retained because this private
-repository is a derivative project.
+CodeSync began as a derivative of [LeetSync](https://github.com/LeetSync/LeetSync), and its Git
+history preserves that origin. Version 3 introduces a distinct CodeSync dashboard, a smaller
+privacy-aware data model, Codeforces support, local-token hardening, credential checks, modern build
+tooling, and independent project documentation.
+
+Codeforces work was developed with reference to
+[CodeforcesSync](https://github.com/mhdnazrul/CodeforcesSync) and
+[cf-pusher](https://github.com/SarJ2004/cf-pusher). See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for provenance and license notices.
+
+## License
+
+CodeSync is available under the [MIT License](LICENSE). Portions derived from or informed by other
+MIT-licensed projects retain their attribution in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

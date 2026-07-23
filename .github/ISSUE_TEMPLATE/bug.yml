@@ -1,0 +1,42 @@
+name: Bug report
+description: Report reproducible CodeSync behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include tokens, private solutions, browser data, or storage exports.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide minimal steps using sanitized example data.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: CodeSync version
+      placeholder: "3.0.0"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Chrome version and operating system
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials and private data from this report.
+          required: true

@@ -11,6 +11,4 @@ export class Question {
   titleSlug: string;
   difficulty: QuestionDifficulty;
   content: string;
-  likes: number;
-  dislikes: number;
 }

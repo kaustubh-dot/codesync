@@ -34,6 +34,7 @@ describe('GithubHandler', () => {
   it('detects likely credentials without blocking ordinary solution text', () => {
     expect(containsLikelyCredential('const answer = 42; // Use a map')).toBe(false);
     expect(containsLikelyCredential(`token = "github_pat_${'a'.repeat(24)}"`)).toBe(true);
+    expect(containsLikelyCredential(`token = "glpat-${'a'.repeat(24)}"`)).toBe(true);
     expect(containsLikelyCredential('-----BEGIN PRIVATE KEY-----')).toBe(true);
   });
 
@@ -47,7 +48,7 @@ describe('GithubHandler', () => {
 
     expect(user?.login).toBe('kaustubh-dot');
     expect(stored).toMatchObject({
-      github_leetsync_token: 'github_pat_test',
+      github_token: 'github_pat_test',
       github_username: 'kaustubh-dot',
     });
   });
@@ -66,7 +67,7 @@ describe('GithubHandler', () => {
   });
 
   it('requires write access to the selected repository', async () => {
-    stored.github_leetsync_token = 'token';
+    stored.github_token = 'token';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -78,7 +79,7 @@ describe('GithubHandler', () => {
   });
 
   it('records public repository visibility', async () => {
-    stored.github_leetsync_token = 'token';
+    stored.github_token = 'token';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -91,7 +92,7 @@ describe('GithubHandler', () => {
   });
 
   it('records Codeforces repository visibility separately', async () => {
-    stored.github_leetsync_token = 'token';
+    stored.github_token = 'token';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -112,13 +113,13 @@ describe('GithubHandler', () => {
 
   it('uploads the README, notes, and solution through the trusted worker configuration', async () => {
     Object.assign(stored, {
-      github_leetsync_token: 'token',
+      github_token: 'token',
       github_username: 'user',
       github_repo_owner: 'owner',
-      github_leetsync_repo: 'solutions',
+      github_repo: 'solutions',
       github_codeforces_repo_owner: 'other-owner',
       github_codeforces_repo: 'codeforces-solutions',
-      github_leetsync_subdirectory: 'leetcode/easy',
+      github_subdirectory: 'leetcode/easy',
     });
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
       init?.method === 'PUT'
@@ -134,11 +135,9 @@ describe('GithubHandler', () => {
       runtime: 1,
       runtimeDisplay: '1 ms',
       runtimePercentile: 99,
-      runtimeDistribution: {} as any,
       memory: 1,
       memoryDisplay: '1 MB',
       memoryPercentile: 98,
-      memoryDistribution: {} as any,
       lang: { name: 'javascript', verboseName: 'JavaScript' },
       notes: 'Use a map.',
       question: {
@@ -151,7 +150,6 @@ describe('GithubHandler', () => {
         likes: 1,
         dislikes: 0,
       },
-      user: { username: 'user', profile: { realName: 'User', userAvatar: '' } },
     } as Submission;
 
     expect(await new GithubHandler().submit(submission)).toBe(true);
@@ -163,11 +161,11 @@ describe('GithubHandler', () => {
 
   it('rejects traversal in a configured subdirectory', async () => {
     Object.assign(stored, {
-      github_leetsync_token: 'token',
+      github_token: 'token',
       github_username: 'user',
       github_repo_owner: 'owner',
-      github_leetsync_repo: 'solutions',
-      github_leetsync_subdirectory: '../private',
+      github_repo: 'solutions',
+      github_subdirectory: '../private',
     });
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -181,10 +179,10 @@ describe('GithubHandler', () => {
 
   it('blocks a submission containing a likely credential before uploading', async () => {
     Object.assign(stored, {
-      github_leetsync_token: 'token',
+      github_token: 'token',
       github_username: 'user',
       github_repo_owner: 'owner',
-      github_leetsync_repo: 'solutions',
+      github_repo: 'solutions',
     });
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
@@ -202,11 +200,11 @@ describe('GithubHandler', () => {
 
   it('uploads and deduplicates an accepted Codeforces submission', async () => {
     Object.assign(stored, {
-      github_leetsync_token: 'token',
+      github_token: 'token',
       github_username: 'user',
       github_repo_owner: 'owner',
-      github_leetsync_repo: 'solutions',
-      github_leetsync_subdirectory: 'accepted',
+      github_repo: 'solutions',
+      github_subdirectory: 'accepted',
     });
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
       init?.method === 'PUT'
@@ -239,13 +237,13 @@ describe('GithubHandler', () => {
 
   it('routes Codeforces to a separate repository without a redundant platform folder', async () => {
     Object.assign(stored, {
-      github_leetsync_token: 'token',
+      github_token: 'token',
       github_username: 'user',
       github_repo_owner: 'owner',
-      github_leetsync_repo: 'leetcode-solutions',
+      github_repo: 'leetcode-solutions',
       github_codeforces_repo_owner: 'owner',
       github_codeforces_repo: 'codeforces-solutions',
-      github_leetsync_subdirectory: 'accepted',
+      github_subdirectory: 'accepted',
     });
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
       init?.method === 'PUT'

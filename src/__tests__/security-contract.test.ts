@@ -30,8 +30,17 @@ describe('extension security contract', () => {
     ].join('\n');
     expect(source).not.toContain('chrome.cookies');
     expect(source).not.toContain('storage.sync');
-    expect(read('src/scripts/leetcode.ts')).not.toContain('github_leetsync_token');
-    expect(read('src/scripts/codeforces.ts')).not.toContain('github_leetsync_token');
+    expect(read('src/scripts/leetcode.ts')).not.toContain('github_token');
+    expect(read('src/scripts/codeforces.ts')).not.toContain('github_token');
     expect(read('src/background.ts')).toContain("accessLevel: 'TRUSTED_CONTEXTS'");
+  });
+
+  it('requests only submission fields used for uploads', () => {
+    const query = read('src/api/submissions/submission.query.ts');
+    expect(query).not.toContain('realName');
+    expect(query).not.toContain('userAvatar');
+    expect(query).not.toContain('lastTestcase');
+    expect(query).not.toContain('runtimeError');
+    expect(query).not.toContain('compileError');
   });
 });
