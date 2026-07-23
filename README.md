@@ -90,9 +90,6 @@ GitHub Actions runs verification, dependency auditing, and CodeQL. Contributions
 
 ## Attribution and license
 
-CodeSync began as a derivative of [LeetSync](https://github.com/LeetSync/LeetSync) and includes work
-informed by [CodeforcesSync](https://github.com/mhdnazrul/CodeforcesSync) and
-[cf-pusher](https://github.com/SarJ2004/cf-pusher). See
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for provenance and license notices.
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for required provenance and license notices.
 
 Licensed under the [MIT License](LICENSE).
