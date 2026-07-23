@@ -2,20 +2,22 @@ import { getAllSubmission, getSubmission } from '../api/submissions/getSubmissio
 import { Submission } from '../types/Submission';
 
 class LeetCodeHandler {
-  async getSubmission(questionSlug: string): Promise<Submission | null> {
+  async getLatestSubmissionId(questionSlug: string): Promise<string | null> {
     const submissions = await getAllSubmission(questionSlug);
+    const id = submissions?.questionSubmissionList?.submissions?.[0]?.id;
+    return id == null ? null : String(id);
+  }
 
-    if (!submissions?.questionSubmissionList?.submissions?.[0]?.id) {
-      return null;
-    }
+  async getSubmissionById(submissionId: string): Promise<Submission | null> {
+    const numericId = Number(submissionId);
+    if (!Number.isInteger(numericId)) return null;
+    const result = await getSubmission(numericId);
+    return result?.submissionDetails ?? null;
+  }
 
-    const latestSubmissionId = submissions?.questionSubmissionList?.submissions?.[0].id;
-
-    const result = await getSubmission(latestSubmissionId);
-
-    if (!result?.submissionDetails) return null;
-
-    return result.submissionDetails;
+  async getSubmission(questionSlug: string): Promise<Submission | null> {
+    const submissionId = await this.getLatestSubmissionId(questionSlug);
+    return submissionId ? this.getSubmissionById(submissionId) : null;
   }
 }
 

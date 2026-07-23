@@ -3,33 +3,67 @@
 import { LeetCodeHandler } from '../handlers';
 
 const leetcode = new LeetCodeHandler();
+let initialized = false;
+let lastQuestionSlug = '';
+let lastSubmissionId = '';
+let syncing = false;
 
 const sleep = async (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-chrome.runtime.onMessage.addListener(async function (request, _s, _sendResponse) {
-  if (request && request.type === 'get-submission') {
-    const questionSlug = request?.data?.questionSlug;
 
-    if (!questionSlug) return;
+const getQuestionSlug = () => location.pathname.match(/^\/problems\/([^/]+)/)?.[1] ?? '';
 
-    let retries = 0;
-    let submission = await leetcode.getSubmission(questionSlug);
-    while (!submission && retries < 3) {
-      retries++;
-      await sleep(retries * 1000);
-      submission = await leetcode.getSubmission(questionSlug);
+const syncLatestAccepted = async (questionSlug: string, triggeredBySubmit = false) => {
+  if (!questionSlug || syncing) return;
+  syncing = true;
+  try {
+    if (questionSlug !== lastQuestionSlug) {
+      initialized = false;
+      lastQuestionSlug = questionSlug;
+      lastSubmissionId = '';
     }
-    if (!submission) {
-      chrome.runtime.sendMessage({ type: 'leetcode-sync-error' });
+
+    let submissionId = await leetcode.getLatestSubmissionId(questionSlug);
+    for (let retry = 1; !submissionId && triggeredBySubmit && retry <= 3; retry++) {
+      await sleep(retry * 1000);
+      submissionId = await leetcode.getLatestSubmissionId(questionSlug);
+    }
+    if (!submissionId) {
+      if (triggeredBySubmit) chrome.runtime.sendMessage({ type: 'leetcode-sync-error' });
       return;
     }
-    //validate submission's timestamp, if its was submitted more than 1 minute ago, then its an old submission and we should ignore it
-    const now = new Date();
-    const submissionDate = new Date(submission.timestamp * 1000);
-    const diff = now.getTime() - submissionDate.getTime();
-    const diffInMinutes = Math.floor(diff / 1000 / 60);
 
-    if (diffInMinutes > 1) return;
+    if (!initialized) {
+      initialized = true;
+      lastSubmissionId = submissionId;
+    } else if (submissionId === lastSubmissionId) {
+      return;
+    } else {
+      lastSubmissionId = submissionId;
+    }
 
+    const submission = await leetcode.getSubmissionById(submissionId);
+    if (!submission || Date.now() - submission.timestamp * 1000 > 3 * 60 * 1000) {
+      if (triggeredBySubmit) chrome.runtime.sendMessage({ type: 'leetcode-sync-error' });
+      return;
+    }
     chrome.runtime.sendMessage({ type: 'submit-to-github', data: submission });
+  } finally {
+    syncing = false;
   }
+};
+
+chrome.runtime.onMessage.addListener((request) => {
+  if (request?.type !== 'get-submission') return;
+  const questionSlug =
+    typeof request?.data?.questionSlug === 'string' ? request.data.questionSlug : '';
+  syncLatestAccepted(questionSlug, true).catch(() =>
+    chrome.runtime.sendMessage({ type: 'leetcode-sync-error' }),
+  );
 });
+
+syncLatestAccepted(getQuestionSlug()).catch(() => undefined);
+setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    syncLatestAccepted(getQuestionSlug()).catch(() => undefined);
+  }
+}, 15_000);
