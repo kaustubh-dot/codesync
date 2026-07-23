@@ -1,6 +1,6 @@
 {
   "name": "codesync-extension",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Securely sync accepted LeetCode and Codeforces submissions to GitHub.",
   "private": true,
   "license": "MIT",

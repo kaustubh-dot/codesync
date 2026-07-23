@@ -1,5 +1,5 @@
 export const GET_SUBMISSION_DETAILS = `
-  query SubmissionDetails($submissionId: Int!) {
+  query submissionDetails($submissionId: Int!) {
     submissionDetails(submissionId: $submissionId) {
       code
       timestamp
@@ -25,14 +25,22 @@ export const GET_SUBMISSION_DETAILS = `
 `;
 
 export const GET_SUBMISSIONS = `
-  query AcceptedSubmissions($questionSlug: String!) {
+  query submissionList(
+    $offset: Int!
+    $limit: Int!
+    $lastKey: String
+    $questionSlug: String!
+    $status: Int
+  ) {
     questionSubmissionList(
-      offset: 0
-      limit: 1
-      lastKey: null
+      offset: $offset
+      limit: $limit
+      lastKey: $lastKey
       questionSlug: $questionSlug
-      status: 10
+      status: $status
     ) {
+      lastKey
+      hasNext
       submissions {
         id
       }

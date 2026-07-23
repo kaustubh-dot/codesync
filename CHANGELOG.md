@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.1 - 2026-07-23
+
+- Restored the proven parameterized LeetCode submission query contract.
+- Removed speculative polling and CSRF handling introduced during the public refactor.
+- Normalized submission IDs and tolerated unavailable runtime or memory percentiles.
+- Kept the dashboard live-updating and corrected stale historical streak reporting.
+
 ## 3.0.0 - 2026-07-23
 
 - Established CodeSync as a public MIT-licensed open-source project with preserved provenance.

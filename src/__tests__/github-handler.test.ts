@@ -157,6 +157,14 @@ describe('GithubHandler', () => {
     expect(putCalls).toHaveLength(3);
     expect(putCalls[0][0]).toContain('/repos/owner/solutions/contents/leetcode/easy/1-two-sum/');
     expect(stored.problemsSolved).toBeTruthy();
+
+    submission.runtimeDisplay = null;
+    submission.runtimePercentile = null;
+    submission.memoryDisplay = null;
+    submission.memoryPercentile = null;
+    expect(await new GithubHandler().submit(submission)).toBe(true);
+    const lastUpload = fetchMock.mock.calls.filter(([, init]) => init?.method === 'PUT').at(-1);
+    expect(JSON.parse(String(lastUpload?.[1]?.body)).message).toContain('Time: N/A (N/A)');
   });
 
   it('rejects traversal in a configured subdirectory', async () => {

@@ -10,6 +10,7 @@ export const Footer = () => {
           color="ctp.blue"
           href="https://github.com/kaustubh-dot/codesync/issues/new/choose"
           target="_blank"
+          rel="noopener noreferrer"
           fontWeight={'semibold'}
         >
           Report Bug
@@ -20,6 +21,7 @@ export const Footer = () => {
           color="ctp.blue"
           href="https://github.com/kaustubh-dot"
           target="_blank"
+          rel="noopener noreferrer"
           fontWeight={'semibold'}
           display="inline-block"
         >

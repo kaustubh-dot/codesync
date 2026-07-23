@@ -338,15 +338,19 @@ export default class GithubHandler {
     problemName: string,
     lang: string,
     stats: {
-      memoryDisplay: string;
-      memoryPercentile: number;
-      runtimeDisplay: string;
-      runtimePercentile: number;
+      memoryDisplay?: string | null;
+      memoryPercentile?: number | null;
+      runtimeDisplay?: string | null;
+      runtimePercentile?: number | null;
     },
   ) {
-    const message = `Time: ${stats.runtimeDisplay} (${stats.runtimePercentile.toFixed(
-      2,
-    )}%) | Memory: ${stats.memoryDisplay} (${stats.memoryPercentile.toFixed(2)}%) - CodeSync`;
+    const percentile = (value?: number | null) =>
+      typeof value === 'number' && Number.isFinite(value) ? `${value.toFixed(2)}%` : 'N/A';
+    const message = `Time: ${stats.runtimeDisplay || 'N/A'} (${percentile(
+      stats.runtimePercentile,
+    )}) | Memory: ${stats.memoryDisplay || 'N/A'} (${percentile(
+      stats.memoryPercentile,
+    )}) - CodeSync`;
     await this.upload(path, `${problemName}${lang}`, code, message);
   }
 

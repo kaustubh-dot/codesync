@@ -23,17 +23,17 @@ describe('LeetCodeHandler getSubmission', () => {
     expect(submissionApi.getSubmission).toHaveBeenCalledWith(1);
   });
 
-  it('reads submission details by the normalized latest id', async () => {
+  it('normalizes string submission ids for the integer details query', async () => {
     vi.mocked(submissionApi.getAllSubmission).mockResolvedValue({
-      questionSubmissionList: { submissions: [{ id: 123 }] },
-    } as any);
+      questionSubmissionList: { submissions: [{ id: '123' }] },
+    });
     vi.mocked(submissionApi.getSubmission).mockResolvedValue({
       submissionDetails: { code: 'answer' } as any,
     });
 
-    const handler = new LeetCodeHandler();
-    expect(await handler.getLatestSubmissionId('two-sum')).toBe('123');
-    expect(await handler.getSubmissionById('123')).toMatchObject({ code: 'answer' });
+    await new LeetCodeHandler().getSubmission('two-sum');
+
     expect(submissionApi.getSubmission).toHaveBeenCalledWith(123);
   });
+
 });

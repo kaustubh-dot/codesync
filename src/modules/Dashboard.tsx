@@ -46,6 +46,7 @@ const LinkedGithubComponents = () => {
         <Link
           href={`https://github.com/${githubOwner}/${githubRepo}`}
           target="_blank"
+          rel="noopener noreferrer"
           fontWeight="semibold"
           fontFamily="mono"
         >

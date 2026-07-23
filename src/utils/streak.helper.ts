@@ -5,17 +5,21 @@ export const getLocalDateKey = (date: Date) =>
 
 export const getTotalNumberOfStreaks = (streak: { [date: string]: number }) => {
   const streakDates = Object.keys(streak)
-    .filter((date) => streak[date] > 0)
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    .filter((date) => streak[date] > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort()
+    .reverse();
 
   if (streakDates.length === 0) return 0;
 
+  const dayNumber = (key: string) => {
+    const [year, month, day] = key.split('-').map(Number);
+    return Date.UTC(year, month - 1, day) / 86_400_000;
+  };
+  if (dayNumber(getLocalDateKey(new Date())) - dayNumber(streakDates[0]) > 1) return 0;
+
   let streaks = 1;
   for (let i = 1; i < streakDates.length; i++) {
-    const prev = new Date(streakDates[i - 1]);
-    const curr = new Date(streakDates[i]);
-    const diff = Math.round((prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 1) {
+    if (dayNumber(streakDates[i - 1]) - dayNumber(streakDates[i]) === 1) {
       streaks++;
     } else {
       break;

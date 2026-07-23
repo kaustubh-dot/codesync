@@ -40,8 +40,11 @@ describe('Streak Helper Functions', () => {
         3,
       );
     });
-    it('should handle single day streaks in the past', () => {
-      expect(getTotalNumberOfStreaks({ '2024-01-10': 1 })).toBe(1);
+    it('should not treat an old historical streak as current', () => {
+      expect(getTotalNumberOfStreaks({ '2024-01-10': 1 })).toBe(0);
+    });
+    it('should keep a streak active when the latest submission was yesterday', () => {
+      expect(getTotalNumberOfStreaks({ '2024-01-14': 1, '2024-01-13': 1 })).toBe(2);
     });
     it('should handle streaks with zeros at the start', () => {
       expect(

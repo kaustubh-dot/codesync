@@ -5,27 +5,25 @@ import { getClient, LEETCODE_GRAPHQL_API_URL } from '../lib/client';
 import { GraphQLClient } from 'graphql-request';
 
 describe('getClient', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
-  });
+  afterEach(() => vi.restoreAllMocks());
 
   it('returns one client configured for LeetCode', () => {
-    expect(LEETCODE_GRAPHQL_API_URL).toBe('https://leetcode.com/graphql/');
+    expect(LEETCODE_GRAPHQL_API_URL).toBe('https://leetcode.com/graphql');
     expect(getClient()).toBeInstanceOf(GraphQLClient);
     expect(getClient()).toBe(getClient());
   });
 
-  it('authenticates submission queries with the page CSRF token', async () => {
-    vi.stubGlobal('document', { cookie: 'theme=dark; csrftoken=test%20token' });
+  it('uses the known-working parameterized submission-list contract', async () => {
     const request = vi.spyOn(getClient(), 'request').mockResolvedValue({} as never);
 
     await getAllSubmission('two-sum');
 
-    expect(request).toHaveBeenCalledWith(
-      GET_SUBMISSIONS,
-      { questionSlug: 'two-sum' },
-      { 'x-csrftoken': 'test token' },
-    );
+    expect(request).toHaveBeenCalledWith(GET_SUBMISSIONS, {
+      questionSlug: 'two-sum',
+      limit: 20,
+      offset: 0,
+      lastKey: null,
+      status: 10,
+    });
   });
 });
